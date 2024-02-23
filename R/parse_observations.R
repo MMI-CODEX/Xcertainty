@@ -40,14 +40,18 @@
 #' @export
 #' 
 parse_observations = function(
-  x, subject_col, meas_col, tlen_col = NULL, image_col, barometer_col, 
-  laser_col, flen_col, iwidth_col, swidth_col, uas_col, timepoint_col = NULL,
-  alt_conversion_col = NULL
+  x, subject_col, meas_col, tlen_col = NULL, image_col, barometer_col = NULL, 
+  laser_col = NULL, flen_col, iwidth_col, swidth_col, uas_col, 
+  timepoint_col = NULL, alt_conversion_col = NULL
 ) {
   
   #
   # validate input
   #
+  
+  if(all(is.null(barometer_col), is.null(laser_col))) {
+    stop('Must provide barometer and/or laser altimeter data.')
+  }
 
   if(!inherits(x, 'data.frame')) {
     stop('x must be a data.frame')
@@ -128,13 +132,23 @@ parse_observations = function(
       training_objects$Timepoint = 1
     }
   }
-
+  
+  # enumerate objects whose lengths should be estimated, if available
+  prediction_objects = pixel_counts %>% 
+    select(Subject, Measurement, Timepoint) %>%
+    unique()
+  if(inherits(training_objects, 'data.frame'))
+    prediction_objects = prediction_objects %>% 
+      setdiff(training_objects %>% select(Subject, Measurement, Timepoint))
+  if(nrow(prediction_objects) == 0)
+    prediction_objects = NULL
+  
   # extract image information
   image_info = x %>% 
     select(
       Image = image_col,
-      AltitudeBarometer = barometer_col,
-      AltitudeLaser = laser_col,
+      Barometer = barometer_col,
+      Laser = laser_col,
       FocalLength = flen_col,
       ImageWidth = iwidth_col,
       SensorWidth = swidth_col,
@@ -184,12 +198,22 @@ parse_observations = function(
     validate_training_objects(training_objects)
   }
   
+  if(!is.null(prediction_objects)) {
+    validate_prediction_objects(prediction_objects)
+  }
+  
   validate_image_info(image_info)
  
+  # TODO: extract the unique object combinations here too, so that people
+  # can get a better sense of how much data will be studied later.  for example,
+  # the model we're working toward could potentially allow an object to be 
+  # measured multiple times per timepoint, which could potentially be useful
+  
   # package results
   res = list(
     pixel_counts = pixel_counts,
     training_objects = training_objects,
+    prediction_objects = prediction_objects,
     image_info = image_info
   )
   class(res) = 'obs.parsed'

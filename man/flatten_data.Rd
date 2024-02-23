@@ -9,13 +9,16 @@ flatten_data(
   priors,
   pixel_counts = data$pixel_counts,
   training_objects = data$training_objects,
-  image_info = data$image_info
+  image_info = data$image_info,
+  prediction_objects = data$prediction_objects
 )
 }
 \arguments{
 \item{priors}{\code{list} with elements \code{altitude}, \code{lengths}, 
 \code{bias}, and \code{sigma} that parameterize the prior distributions for 
-the Bayesian model}
+the Bayesian model.  The bias components may specify separate priors for
+each UAS/altimeter type combination, or for all barometers at once based on
+the information provided for joining.}
 
 \item{pixel_counts}{\code{data.frame} with columns \code{Subject}, 
 \code{Measurement}, \code{Image}, and \code{PixelCount} that describe the 
@@ -26,7 +29,7 @@ length measurements taken from images}
 the objects used to calibrate the photogrammetric model}
 
 \item{image_info}{\code{data.frame} with columns \code{Image}, 
-\code{AltitudeBarometer}, \code{AltitudeLaser}, \code{FocalLength}, 
+\code{Barometer}, \code{Laser}, \code{FocalLength}, 
 \code{ImageWidth}, and \code{SensorWidth} that describe the images used in 
 the photogrammetric study}
 }

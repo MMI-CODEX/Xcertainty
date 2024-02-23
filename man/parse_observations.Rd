@@ -10,8 +10,8 @@ parse_observations(
   meas_col,
   tlen_col = NULL,
   image_col,
-  barometer_col,
-  laser_col,
+  barometer_col = NULL,
+  laser_col = NULL,
   flen_col,
   iwidth_col,
   swidth_col,
@@ -75,12 +75,12 @@ data("whales")
 
 # parse calibration study
 calibration_data = parse_observations(
-  x = calibration, 
+  x = calibration \%>\% filter(is.finite(Laser_Alt)), 
   subject_col = 'CO.ID',
   meas_col = 'Lpix', 
   tlen_col = 'CO.L', 
   image_col = 'image', 
-  barometer_col = 'Baro_Alt', 
+  barometer_col = 'Baro_Alt',
   laser_col = 'Laser_Alt', 
   flen_col = 'Focal_Length', 
   iwidth_col = 'Iw', 
@@ -90,11 +90,11 @@ calibration_data = parse_observations(
 
 # parse field study
 whale_data = parse_observations(
-  x = whales, 
+  x = whales\%>\% filter(is.finite(AltitudeLaser)), 
   subject_col = 'whale_ID',
   meas_col = 'TL.pix', 
   image_col = 'Image', 
-  barometer_col = 'AltitudeBarometer', 
+  barometer_col = 'AltitudeBarometer',
   laser_col = 'AltitudeLaser', 
   flen_col = 'FocalLength', 
   iwidth_col = 'ImageWidth', 
@@ -102,125 +102,54 @@ whale_data = parse_observations(
   uas_col = 'UAS'
 )
 
-sampler = build_sampler(
-  data = combine_observations(calibration_data, whale_data),
-  priors = list(
-    altitude = c(min = 0.1, max = 130),
-    lengths = c(min = 0, max = 30),
-    bias = rbind(
-      Barometer = c(mean = 0, sd = 1e2),
-      Laser = c(mean = 0, sd = 1e2),
-      Pixels = c(mean = 0, sd = 1e2)
-    ),
-    sigma = rbind(
-      Barometer = c(shape = .01, rate = .01),
-      Laser = c(shape = .01, rate = .01),
-      Pixels = c(shape = .01, rate = .01)
-    )
-  )
-)
+# TODO: add additional post-processing scripts that can help replace the 
+# additional monitors that enrico created.  or, we can consider leaving those in 
+# the model since they will be constrained to the appropriate length model 
+# section.  but, this would require additional parameterization, for example,
+# to get the growth curve data in shape.
 
+# TODO: Make some vignettes that show how to reproduce enrico's analyses, etc.
 
+# TODO: Make sure we offer some sort of developer's guide, so they can add their
+# own models too... in this sense, maybe we push some of enrico's model back to
+# enrico.  naturally, we'll need to provide some sort of example workflow for 
+# how to make the required modifications and link a model in to code.  so, it 
+# might be reasonable to start working on implementing the simpler models first,
+# since the work done here will still be informative toward re-implementing a 
+# growth curve model
 
-
-
-# draw posterior samples
-niter = 1e4
-burn = 1:(niter/2)
-standard_sampler$run(niter = niter)
-calibration_sampler$run(niter = niter)
-
-niter2 = 1e3
-burn2 = 1:(niter2/2)
-tick = proc.time()[3]
-calibrated_obs_sampler$run(niter = niter2, reset = TRUE)
-tock = proc.time()[3]
-(tock-tick)/niter2
-
-# clear evidence that the posterior under the joint model is somewhat unstable
-nodes = c('sigma[1]','sigma[2]','sigma[3]')
-colMeans(as.matrix(standard_sampler$mvSamples)[-burn, nodes])
-colMeans(as.matrix(calibration_sampler$mvSamples)[-burn, nodes])
-
-
-# look at the estimated lengths under the different schemes
-calibrated_samples = as.matrix(calibrated_obs_sampler$mvSamples)
-calibrated_length_samples = as.matrix(calibrated_obs_sampler$mvSamples2)
-standard_length_samples = as.matrix(standard_sampler$mvSamples2)
-
-# saveRDS(c alibrated_length_samples, file = 'calibrated_length_samples.rds')
-
-ind = 300
-plot(mcmc(calibrated_length_samples[-burn2,ind]))
-plot(mcmc(standard_length_samples[-burn,ind]))
-
-plot(density(standard_length_samples[-burn,ind]), ylim = c(0,32))
-lines(density(calibrated_length_samples[-burn2,ind]), col = 2)
-
-
-sd(mcmc(calibrated_length_samples[-burn2,ind]))
-sd(mcmc(standard_length_samples[-burn,ind]))
-
-HPDinterval(mcmc(calibrated_length_samples[-burn2,ind]))
-HPDinterval(mcmc(standard_length_samples[-burn,ind]))
-
-effectiveSize(mcmc(calibrated_length_samples[-burn2,ind]))
-
-plot(mcmc(calibrated_samples[-burn2,ind]))
-
-plot(mcmc(calibrated_length_samples[-burn2,ind]))
-
+# TODO: expand the model to account for time trends.  By default, add 
+# constraints whereever we see timepoints increasing.  Naturally, this could 
+# be challenging because we might only want to make this assumption for length
+# measurements, not width measurements.  so, we'll need to check with KC about
+# the function name/interface.  but, the overall idea is that we're doing a 
+# decent job of creating a workflow for implementing different model structures.
+# so, what will the naming conventions be for these types of "build_sampler" 
+# objects? or will it just be "build_sampler" with different "length_model" 
+# options and additional arguments?
 
 devtools::document()
 
-
-# TODO: write a model to allow changes over season per length, so that we 
-# may work toward a more robust model for growth, but do some EDA on the 
-# individual lengths first to see if there are some relationships to be seen
-
-# TODO: write a model to output estimates of maturity based on TL
-
-L_template = nimble::nimbleCode({
-  # pattern for relationship per individual: will be expanded following df
-  TL.50.0..Width ~ dnorm(mean = beta[1] + beta[2] * TL, var = sigma_w)
-  TL ~ dnorm(mean = mu_tl, var = sigma_tl)
-})
-
-L_priors = nimble::nimbleCode({
-  # relationship priors
-  beta[1] ~ dnorm(mean = 0 , sd = 1e2)
-  beta[2] ~ dnorm(mean = 0, sd = 1e2)
-  mu_tl ~ dnorm(mean = 0, sd = 1e2)
-  sigma_w ~ dinvgamma(shape = .01, rate = .01)
-  sigma_tl ~ dinvgamma(shape = .01, rate = .01)
-  
-})
-
-L_substitutions = data.frame(
-  subject = unique(project_pkg$maps$L$Subject)
-) \%>\% mutate(
-  TL = getMeasurementNode(subject, 'TL', project_pkg),
-  TL.50.0..Width = getMeasurementNode(subject, 'TL.50.0..Width', project_pkg)
-) \%>\% 
-  filter(complete.cases(.))
-
-L_model = expand_template(
-  template = L_template, substitutions = L_substitutions
+sampler = calibration_sampler(
+  data = combine_observations(calibration_data, whale_data),
+  priors = list(
+    image_altitude = c(min = 0.1, max = 130),
+    altimeter_bias = rbind(
+      data.frame(altimeter = 'Barometer', mean = 0, sd = 1e2),
+      data.frame(altimeter = 'Laser', mean = 0, sd = 1e2)
+    ),
+    altimeter_variance = rbind(
+      data.frame(altimeter = 'Barometer', shape = .01, rate = .01),
+      data.frame(altimeter = 'Laser', shape = .01, rate = .01)
+    ),
+    pixel_variance = c(shape = .01, rate = .01)
+  )
 )
 
-# add components for length model to analysis package
-project_pkg$inits$beta = c(0,0)
-project_pkg$inits$mu_tl = 8
-project_pkg$inits$sigma_w = 1
-project_pkg$inits$sigma_tl = 1
+output = sampler(niter = 1e4)
 
-# build calibrated model
-standard_tl50_model = build_model(
-  pkg = project_pkg, useBarometer = TRUE, useLaser = TRUE,
-  length_model = combine_models(L_model, L_priors)
-)
+df = do.call(rbind, lapply(output$altimeters, function(x) x$summary))
+rownames(df) = NULL
 
-standard_tl50_sampler = build_mcmc(
-  model = standard_tl50_model, pkg = project_pkg
-)
+df
 }

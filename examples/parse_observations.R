@@ -6,12 +6,12 @@ data("whales")
 
 # parse calibration study
 calibration_data = parse_observations(
-  x = calibration, 
+  x = calibration %>% filter(is.finite(Laser_Alt)), 
   subject_col = 'CO.ID',
   meas_col = 'Lpix', 
   tlen_col = 'CO.L', 
   image_col = 'image', 
-  barometer_col = 'Baro_Alt', 
+  barometer_col = 'Baro_Alt',
   laser_col = 'Laser_Alt', 
   flen_col = 'Focal_Length', 
   iwidth_col = 'Iw', 
@@ -21,11 +21,11 @@ calibration_data = parse_observations(
 
 # parse field study
 whale_data = parse_observations(
-  x = whales, 
+  x = whales%>% filter(is.finite(AltitudeLaser)), 
   subject_col = 'whale_ID',
   meas_col = 'TL.pix', 
   image_col = 'Image', 
-  barometer_col = 'AltitudeBarometer', 
+  barometer_col = 'AltitudeBarometer',
   laser_col = 'AltitudeLaser', 
   flen_col = 'FocalLength', 
   iwidth_col = 'ImageWidth', 
@@ -33,20 +33,58 @@ whale_data = parse_observations(
   uas_col = 'UAS'
 )
 
-sampler = build_sampler(
+# TODO: add additional post-processing scripts that can help replace the 
+# additional monitors that enrico created.  or, we can consider leaving those in 
+# the model since they will be constrained to the appropriate length model 
+# section.  but, this would require additional parameterization, for example,
+# to get the growth curve data in shape.
+
+# TODO: Make some vignettes that show how to reproduce enrico's analyses, etc.
+
+# TODO: Make sure we offer some sort of developer's guide, so they can add their
+# own models too... in this sense, maybe we push some of enrico's model back to
+# enrico.  naturally, we'll need to provide some sort of example workflow for 
+# how to make the required modifications and link a model in to code.  so, it 
+# might be reasonable to start working on implementing the simpler models first,
+# since the work done here will still be informative toward re-implementing a 
+# growth curve model
+
+# TODO: expand the model to account for time trends.  By default, add 
+# constraints whereever we see timepoints increasing.  Naturally, this could 
+# be challenging because we might only want to make this assumption for length
+# measurements, not width measurements.  so, we'll need to check with KC about
+# the function name/interface.  but, the overall idea is that we're doing a 
+# decent job of creating a workflow for implementing different model structures.
+# so, what will the naming conventions be for these types of "build_sampler" 
+# objects? or will it just be "build_sampler" with different "length_model" 
+# options and additional arguments?
+
+devtools::document()
+
+sampler = calibration_sampler(
   data = combine_observations(calibration_data, whale_data),
   priors = list(
-    altitude = c(min = 0.1, max = 130),
-    lengths = c(min = 0, max = 30),
-    bias = rbind(
-      Barometer = c(mean = 0, sd = 1e2),
-      Laser = c(mean = 0, sd = 1e2),
-      Pixels = c(mean = 0, sd = 1e2)
+    image_altitude = c(min = 0.1, max = 130),
+    altimeter_bias = rbind(
+      data.frame(altimeter = 'Barometer', mean = 0, sd = 1e2),
+      data.frame(altimeter = 'Laser', mean = 0, sd = 1e2)
     ),
-    sigma = rbind(
-      Barometer = c(shape = .01, rate = .01),
-      Laser = c(shape = .01, rate = .01),
-      Pixels = c(shape = .01, rate = .01)
-    )
+    altimeter_variance = rbind(
+      data.frame(altimeter = 'Barometer', shape = .01, rate = .01),
+      data.frame(altimeter = 'Laser', shape = .01, rate = .01)
+    ),
+    pixel_variance = c(shape = .01, rate = .01)
   )
 )
+
+output = sampler(niter = 1e4)
+
+df2 = do.call(rbind, lapply(output$altimeters, function(x) x$summary))
+rownames(df2) = NULL
+
+df2
+
+df = do.call(rbind, lapply(output$altimeters, function(x) x$summary))
+rownames(df) = NULL
+
+df

@@ -9,6 +9,9 @@ build_sampler = function(data, priors, control = list()) {
   # set configuration defaults
   #
   
+  # TODO: redo this s.t. if control$barometer == FALSE, then we will simply 
+  # remote barometer measurement data and altimeters from the model, etc.
+  
   # use barometer altimeter data by default
   if(!('barometer' %in% names(control))) {
     control$barometer = TRUE

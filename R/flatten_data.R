@@ -11,18 +11,22 @@
 #'   \code{Measurement}, and \code{Length} that describe the known lengths of 
 #'   the objects used to calibrate the photogrammetric model
 #' @param image_info \code{data.frame} with columns \code{Image}, 
-#'   \code{AltitudeBarometer}, \code{AltitudeLaser}, \code{FocalLength}, 
+#'   \code{Barometer}, \code{Laser}, \code{FocalLength}, 
 #'   \code{ImageWidth}, and \code{SensorWidth} that describe the images used in 
 #'   the photogrammetric study
 #' @param priors \code{list} with elements \code{altitude}, \code{lengths}, 
 #'   \code{bias}, and \code{sigma} that parameterize the prior distributions for 
-#'   the Bayesian model
+#'   the Bayesian model.  The bias components may specify separate priors for
+#'   each UAS/altimeter type combination, or for all barometers at once based on
+#'   the information provided for joining.
 #' 
 #' @import dplyr
+#' @import tidyr
 #' 
 flatten_data = function(
   data = NULL, priors, pixel_counts = data$pixel_counts, 
-  training_objects = data$training_objects, image_info = data$image_info
+  training_objects = data$training_objects, image_info = data$image_info,
+  prediction_objects = data$prediction_objects
 ) {
   
   #
@@ -30,18 +34,64 @@ flatten_data = function(
   #
   
   # validate prior distribution input exists
-  for(component in c('altitude', 'lengths', 'bias', 'sigma')) {
+  for(component in c('altimeter_bias', 'altimeter_variance', 'image_altitude',
+                     'pixel_variance')) {
     if(is.null(priors[[component]])) {
       stop(paste('Missing component from input: priors$', component, sep = ''))
     }
   }
   
   validate_pixel_counts(pixel_counts)
+  
   validate_image_info(image_info)
+  
   if(!is.null(training_objects)) {
     validate_training_objects(training_objects)
   }
   
+  if(!is.null(prediction_objects)) {
+    validate_prediction_objects(prediction_objects)
+  }
+  
+  #
+  # process inputs
+  #
+  
+  # TODO: Will this still return a data.frame if there is only one altimeter?
+  # enumerate altimeter combinations we have data for
+  altimeter_types = image_info %>% 
+    select(UAS, all_of(unique(priors$altimeter_bias$altimeter))) %>% 
+    pivot_longer(
+      cols = all_of(unique(priors$altimeter_bias$altimeter)), 
+      names_to = 'altimeter', 
+      values_to = 'measurement'
+    ) %>% 
+    filter(is.finite(measurement)) %>% 
+    select(UAS, altimeter) %>% 
+    unique() %>% 
+    arrange(UAS, altimeter)
+  
+  # enumerate objects to analyze
+  object_list = NULL
+  if(!is.null(training_objects)) { 
+    object_list = rbind(
+      object_list, 
+      training_objects %>% select(Subject, Measurement, Timepoint)
+    )
+  }
+  if(!is.null(prediction_objects)) {
+    object_list = rbind(
+      object_list, 
+      prediction_objects %>% select(Subject, Measurement, Timepoint)
+    )
+  }
+  
+  # only retain pixel count data in pixel_counts for known objects
+  pixel_counts = object_list %>% 
+    left_join(
+      y = pixel_counts,
+      by = c('Subject', 'Measurement', 'Timepoint')
+    )
   
   # arrange pixel counts s.t. measurements are contiguous wrt. image
   pixel_counts = pixel_counts[order(pixel_counts$Image), ]
@@ -51,154 +101,117 @@ flatten_data = function(
   #
   
   # initialize storage for nimble model
-  pkg = list(data = list(), consts = list(), inits = list())
+  pkg = list(data = list(), constants = list(), inits = list(), maps = list())
   
-  # Initial measurement error parameters
-  pkg$inits$bias = c(Barometer = 0, Laser = 0, Pixels = 0)
-  pkg$inits$sigma = c(Barometer = 1, Laser = 1, Pixels = 1)
+  pkg$maps$altimeters = altimeter_types
+  pkg$constants$n_altimeters = nrow(pkg$maps$altimeters)
+  pkg$inits$altimeter_bias = rep(0, pkg$constants$n_altimeters)
+  pkg$inits$altimeter_variance = rep(1, pkg$constants$n_altimeters)
   
-  # Prior distribution specifications
-  pkg$consts$priors_altitude = priors$altitude
-  pkg$consts$priors_lengths = priors$lengths
-  pkg$consts$priors_bias = priors$bias
-  pkg$consts$priors_sigma = priors$sigma
+  # assemble prior bias distributions for all uas/altimeter type combinations
+  pkg$constants$prior_altimeter_bias = pkg$maps$altimeters %>% 
+    left_join(
+      y = priors$altimeter_bias
+    ) %>% 
+    select(mean, sd) %>% 
+    as.matrix()
   
-  #
-  # additional labels for inputs
-  #
+  # assemble prior var. distributions for all uas/altimeter type combinations
+  pkg$constants$prior_altimeter_variance = pkg$maps$altimeters %>% 
+    left_join(
+      y = priors$altimeter_variance
+    ) %>% 
+    select(shape, rate) %>% 
+    as.matrix()
   
-  # define image id's
-  image_info$ImageId = 1:nrow(image_info)
+  pkg$maps$images = image_info$Image
+  pkg$constants$n_images = length(pkg$maps$images)
+
+  # use average reported image altitude as initial guess for true altitude
+  pkg$inits$image_altitude = image_info %>% 
+    select(all_of(unique(pkg$maps$altimeters$altimeter))) %>% 
+    rowMeans(na.rm = TRUE) %>% 
+    as.numeric()
   
-  # enumerate all objects for which measurements were taken
-  objs = pixel_counts %>% 
-    select(Subject, Measurement, Timepoint) %>% 
-    unique() %>% 
-    mutate(
-      name = paste(gsub('\\s+', '_', Subject),
-                   gsub('\\s+', '_', Measurement),
-                   gsub('\\s+', '_', Timepoint),
-                   sep = '-'),
-      ObjectId = 1:n()
+  pkg$constants$prior_image_altitude = priors$image_altitude
+  
+  # pivot altimeter readings to extract flattened data; ignore missing data
+  altitude_measurements_longer = image_info %>% 
+    select(Image, UAS, all_of(unique(pkg$maps$altimeters$altimeter))) %>% 
+    pivot_longer(
+      cols = all_of(unique(pkg$maps$altimeters$altimeter)), 
+      names_to = 'altimeter', 
+      values_to = 'measurement'
+    ) %>% 
+    filter(
+      complete.cases(.)
     )
   
-  # determine and merge id's of training objects
-  if(!is.null(training_objects)) {
-    train_ids = objs %>%
-      semi_join(
-        training_objects, by = c('Subject', 'Measurement', 'Timepoint')
-      ) %>%
-      select(ObjectId) %>%
-      unlist() 
-  } else {
-    train_ids = NULL
-  }
-  objs = objs %>%
-    mutate(Type = ifelse(ObjectId %in% train_ids, 'Train', 'Estimate'))
+  pkg$constants$n_altimeter_measurements = nrow(altitude_measurements_longer)
+  pkg$data$altimeter_measurement = altitude_measurements_longer$measurement
   
-  # export object id mapping
-  pkg$maps$L = objs %>%
-    mutate(
-      Estimated = (Type == 'Estimate'),
-      NodeName = paste('L[', ObjectId, ']', sep = '')
+  pkg$constants$altimeter_measurement_image = altitude_measurements_longer %>% 
+    left_join(
+      y = data.frame(Image = pkg$maps$images) %>% mutate(ind = 1:n()),
+      by = 'Image'
+    ) %>% 
+    select(ind) %>% 
+    unlist() %>% 
+    as.numeric()
+  
+  pkg$constants$altimeter_measurement_type = altitude_measurements_longer %>% 
+    left_join(
+      y = pkg$maps$altimeters %>% mutate(ind = 1:n())
     ) %>%
-    select(Subject, Measurement, Timepoint, Estimated, NodeName)
+    select(ind) %>% 
+    unlist() %>% 
+    as.numeric()
   
-  #
-  # format data for model code
-  #
+  pkg$inits$pixel_variance = 1
+  pkg$constants$prior_pixel_variance = priors$pixel_variance
   
-  # barometer and laser altimeter metadata
-  pkg$consts$baro_map = which(is.finite(image_info$AltitudeBarometer))
-  pkg$consts$laser_map = which(is.finite(image_info$AltitudeLaser))
-    
-  # barometer and laser altimeter reading data
-  pkg$data$a_baro = image_info$AltitudeBarometer
-  pkg$data$a_laser = image_info$AltitudeLaser
-  pkg$inits$a = rowMeans(image_info[, c('AltitudeBarometer', 'AltitudeLaser')],
-                         na.rm = TRUE)
+  pkg$maps$objects = object_list
   
-  # pixel measurements
-  pkg$data$pixels_obs = pixel_counts$PixelCount
-  
-  # TODO: add empirical lengths, for comparison
-  
-  # indices of first and last pixel measurement for image
-  pixel_range = t(sapply(image_info$Image, function(img) {
-    range(which(pixel_counts$Image == img))
-  }))
-  colnames(pixel_range) = c('FirstMeasurement', 'LastMeasurement')
-  
-  # information about each image
-  pkg$consts$image_info = as.matrix(cbind(
-    image_info[, c('FocalLength', 'ImageWidth', 'SensorWidth')],
-    pixel_range
-  ))
-
-  # associate each length measurement with object (lengths) and images
-  pkg$consts$pixel_id_map = as.matrix(
-    pixel_counts %>%
-      left_join(objs, by = c('Subject', 'Measurement', 'Timepoint')) %>%
-      left_join(image_info, by = 'Image') %>%
-      select(ObjectId, ImageId)
-  )
-  
-  # initialize object lengths
-  pkg$inits$L = pixel_counts %>%
-    # get image information for measurements
-    left_join(cbind(image_info, a = pkg$inits$a), by =  'Image') %>%
-    # get object id's and test/train type
-    left_join(objs, by = c('Subject', 'Measurement', 'Timepoint'))
-  if(is.null(training_objects)) {
-    # annotate that no exact lengths are known
-    pkg$inits$L$Length = NA
+  # initialize object lengths as unknown values.  values will be populated 
+  # according to whether or not objects are training objects or not
+  if(is.null(data$training_objects)) {
+    pkg$inits$object_length = rep(NA, nrow(pkg$maps$objects))
   } else {
-    pkg$inits$L = pkg$inits$L %>% 
-      # source of training object lengths
-      left_join(training_objects, by = c('Subject', 'Measurement', 'Timepoint')) 
+    pkg$inits$object_length = object_list %>% 
+      left_join(
+        y = data$training_objects,
+        by = c('Subject', 'Measurement', 'Timepoint')
+      ) %>% 
+      select(Length) %>% 
+      unlist() %>% 
+      as.numeric()
   }
-  pkg$inits$L = pkg$inits$L %>% 
-    # estimated length
-    mutate(L = a * SensorWidth / FocalLength / ImageWidth * PixelCount) %>%
-    # overwrite estimates with true lengths if available (i.e., training objs)
-    mutate(L = ifelse(is.finite(Length), Length, L)) %>%
-    # summarize, arrange, output
-    group_by(ObjectId) %>%
-    summarise(L_est = mean(L)) %>%
-    ungroup() %>%
-    arrange(ObjectId) %>%
-    select(L_est) %>%
-    unlist()
   
-  #
-  # Extract totals
-  #
+  pkg$constants$pixel_count_expected_object = pixel_counts %>% 
+    left_join(
+      y = pkg$maps$objects %>% mutate(ind = 1:n()),
+      by = c('Subject', 'Measurement', 'Timepoint')
+    ) %>% 
+    select(ind) %>% 
+    unlist() %>% 
+    as.numeric()
   
-  # indices of lengths to be estimated; add extra element to ensure nimble 
-  # interprets L_unknown_inds as a vector, even if only estimating one length
-  pkg$consts$L_unknown_inds = c(which(objs$Type == 'Estimate'), 0)
+  pkg$constants$image_focal_length = image_info$FocalLength
+  pkg$constants$image_width = image_info$ImageWidth
+  pkg$constants$image_sensor_width = image_info$SensorWidth
   
-  pkg$consts$N_images = nrow(image_info)
-  pkg$consts$N_unknown_lengths = length(pkg$consts$L_unknown_inds) - 1
-  pkg$consts$N_lengths = length(pkg$inits$L)
-  pkg$consts$N_pixel_counts = nrow(pixel_counts)
-  pkg$consts$N_baro = length(pkg$consts$baro_map)
-  pkg$consts$N_laser = length(pkg$consts$laser_map)
+  pkg$constants$pixel_count_expected_image = pixel_counts %>% 
+    left_join(
+      y = data.frame(Image = pkg$maps$images) %>% mutate(ind = 1:n()),
+      by = 'Image'
+    ) %>% 
+    select(ind) %>% 
+    unlist() %>% 
+    as.numeric()
   
-  # begin by specifying default, independence prior for unknown lengths
-  pkg$consts$independentLengths = TRUE
+  pkg$data$pixel_count_observed = pixel_counts$PixelCount
   
-  #
-  # Initialize expected pixel counts
-  #
-  
-  pkg$inits$pixels_expected = sapply(1:pkg$consts$N_pixel_counts, function(i) {
-    pkg$inits$L[ pkg$consts$pixel_id_map[i, 1] ] *
-      pkg$consts$image_info[ pkg$consts$pixel_id_map[i, 2], 1 ] *
-      pkg$consts$image_info[ pkg$consts$pixel_id_map[i, 2], 2 ] /
-      pkg$consts$image_info[ pkg$consts$pixel_id_map[i, 2], 3 ] /
-      pkg$inits$a[ pkg$consts$pixel_id_map[i, 2] ]
-  })
+  pkg$constants$n_pixel_counts = length(pkg$data$pixel_count_observed)
  
   class(pkg) = 'data.flattened'
   pkg

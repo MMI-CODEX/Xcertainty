@@ -23,6 +23,7 @@ combine_observations = function(...) {
   res = list(
     pixel_counts = do.call(rbind, lapply(x, function(x) x$pixel_counts)),
     training_objects = do.call(rbind, lapply(x, function(x) x$training_objects)),
+    prediction_objects = do.call(rbind, lapply(x, function(x) x$prediction_objects)),
     image_info = do.call(rbind, lapply(x, function(x) x$image_info))
   )
   
@@ -34,6 +35,10 @@ combine_observations = function(...) {
 
   if(!is.null(res$training_objects)) {
     validate_training_objects(res$training_objects)
+  }
+  
+  if(!is.null(res$prediction_objects)) {
+    validate_prediction_objects(res$prediction_objects)
   }
   
   validate_image_info(res$image_info)

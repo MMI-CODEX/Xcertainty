@@ -96,6 +96,48 @@ validate_training_objects = function(x, error = 'stop', verbose = TRUE) {
   }
 }
 
+validate_prediction_objects = function(x, error = 'stop', verbose = TRUE) {
+  
+  if(!inherits(x, 'data.frame')) {
+    handle_error(msg = 'Prediction object info must be in a data.frame',
+                 action = error)
+  }
+  
+  # data columns must exist in data.frame
+  required = c('Subject', 'Measurement', 'Timepoint')
+  if(!all(required %in% colnames(x))) {
+    handle_error(
+      msg = paste('Column(s)',
+                  paste(setdiff(required, colnames(x)), collapse = ', '),
+                  'not found in x'),
+      action = error
+    )
+  }
+  
+  # only one entry for each training object
+  if(nrow(x) != nrow(x %>% select(Subject, Measurement, Timepoint) %>% 
+                     unique())) {
+    
+    # figure out where the multiple objects occur
+    err_details = x %>% 
+      group_by(Subject, Measurement, Timepoint) %>% 
+      summarise(NumEntries = n(), .groups = 'keep') %>% 
+      filter(NumEntries > 1)
+    
+    # report error details
+    if(verbose) {
+      pf = capture.output(print(err_details))
+      for(p in pf) {
+        message(p)
+      }
+    }
+    
+    handle_error(msg = 'Some prediction objects are registered more than once.',
+                 action = error)
+  }
+  
+}
+
 validate_image_info = function(x, error = 'stop', verbose = TRUE) {
   
   if(!inherits(x, 'data.frame')) {
@@ -103,13 +145,20 @@ validate_image_info = function(x, error = 'stop', verbose = TRUE) {
   }
   
   # data columns must exist in data.frame
-  required = c('Image', 'AltitudeBarometer', 'AltitudeLaser', 'FocalLength',
-               'ImageWidth', 'SensorWidth', 'UAS')
+  required = c('Image', 'FocalLength', 'ImageWidth', 'SensorWidth', 'UAS')
   if(!all(required %in% colnames(x))) {
     handle_error(
       msg = paste('Column(s)',
                   paste(setdiff(required, colnames(x)), collapse = ', '),
                   'not found in x'),
+      action = error
+    )
+  }
+  
+  # need column for at least one type of altimeter
+  if(!any(c('Barometer', 'Laser') %in% colnames(x))) {
+    handle_error(
+      msg = 'Neither Barometer or Laser columns found in x',
       action = error
     )
   }
@@ -142,17 +191,28 @@ validate_image_info = function(x, error = 'stop', verbose = TRUE) {
   }
   
   # need at least one altimeter measurement for each image
-  missing_altitudes = x$Image[
-    (!is.finite(x$AltitudeBarometer)) & (!is.finite(x$AltitudeLaser))
-  ]
+  altimeter_cols = intersect(colnames(x), c('Barometer', 'Laser'))
+  missing_altitudes =x %>% 
+    select(Image, all_of(altimeter_cols)) %>%
+    pivot_longer(
+      cols = altimeter_cols, 
+      names_to = 'altimeter', 
+      values_to = 'measurement'
+    ) %>% 
+    group_by(Image) %>% 
+    summarise(nfinite = sum(is.finite(measurement))) %>% 
+    filter(nfinite == 0) %>% 
+    select(Image) %>% 
+    unlist() %>% 
+    unname()
   if(length(missing_altitudes) > 0) {
     
     # report error details
     if(verbose) {
       message(
         paste(
-          'No finite barometer or laser data for image(s):',
-          paste(missing_altitudes, collapse = ', ')
+          'No finite altimeter data provided for image(s):\n',
+          paste(missing_altitudes, collapse = '\n')
         )
       )
     }
