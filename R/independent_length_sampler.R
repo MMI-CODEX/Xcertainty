@@ -81,32 +81,17 @@ independent_length_sampler = function(data, priors) {
     post_inds = seq(from = nrow(samples) * summary.burn, to = nrow(samples))
     res = list()
     if(verbose) message('Extracting altimeter output')
-    res$altimeters = format_altimeter_output(
-      pkg = pkg, samples = samples, post_inds = post_inds
-    )
+    res$altimeters = format_altimeter_output(pkg, samples, post_inds)
     if(verbose) message('Extracting image output')
-    res$images = format_image_output(
-      pkg = pkg, samples = samples, post_inds = post_inds
-    )
+    res$images = format_image_output(pkg, samples, post_inds)
     if(verbose) message('Extracting pixel error output')
-    res$pixel_error = format_pixel_output(
-      pkg = pkg, samples = samples, post_inds = post_inds
-    )
+    res$pixel_error = format_pixel_output(pkg, samples, post_inds)
     if(verbose) message('Extracting object output')
     res$objects = format_object_output(
-      pkg = pkg, samples = samples, post_inds = post_inds, 
-      prediction_objects = data$prediction_objects
+      pkg, samples, post_inds, data$prediction_objects
     )
     if(verbose) message('Extracting summaries')
-    res$summaries = lapply(res, function(component) {
-      if('summary' %in% names(component)) {
-        s = component$summary
-      } else {
-        s = do.call(rbind, lapply(component, function(x) x$summary))
-        rownames(s) = NULL
-      }
-      s
-    })
+    res$summaries = extract_summaries(res)
     res
   }
 }
