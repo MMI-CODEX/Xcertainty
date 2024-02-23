@@ -108,7 +108,11 @@ parse_observations = function(
       Image = image_col,
       PixelCount
     ) %>% 
-    unique()
+    unique() %>% 
+    mutate(
+      Subject = as.character(Subject),
+      Measurement = as.character(Measurement)
+    )
   
   # add a default, common timepoint if information not provided
   if(!('Timepoint' %in% colnames(pixel_counts))) {
@@ -126,7 +130,11 @@ parse_observations = function(
         Timepoint = timepoint_col,
         Length = tlen_col
       ) %>% 
-      unique()
+      unique() %>% 
+      mutate(
+        Subject = as.character(Subject),
+        Measurement = as.character(Measurement)
+      )
     # add a default, common timepoint if information not provided
     if(!('Timepoint' %in% colnames(training_objects))) {
       training_objects$Timepoint = 1
@@ -136,7 +144,11 @@ parse_observations = function(
   # enumerate objects whose lengths should be estimated, if available
   prediction_objects = pixel_counts %>% 
     select(Subject, Measurement, Timepoint) %>%
-    unique()
+    unique() %>%
+    mutate(
+      Subject = as.character(Subject),
+      Measurement = as.character(Measurement)
+    )
   if(inherits(training_objects, 'data.frame'))
     prediction_objects = prediction_objects %>% 
       setdiff(training_objects %>% select(Subject, Measurement, Timepoint))

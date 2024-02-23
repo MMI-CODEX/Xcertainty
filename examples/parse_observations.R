@@ -59,8 +59,6 @@ whale_data = parse_observations(
 # objects? or will it just be "build_sampler" with different "length_model" 
 # options and additional arguments?
 
-devtools::document()
-
 sampler = calibration_sampler(
   data = combine_observations(calibration_data, whale_data),
   priors = list(
@@ -79,12 +77,31 @@ sampler = calibration_sampler(
 
 output = sampler(niter = 1e4)
 
-df2 = do.call(rbind, lapply(output$altimeters, function(x) x$summary))
-rownames(df2) = NULL
+output$summaries$altimeters %>% filter(parameter == 'variance')
 
-df2
+output$summaries$altimeters %>% filter(parameter == 'bias')
 
-df = do.call(rbind, lapply(output$altimeters, function(x) x$summary))
-rownames(df) = NULL
+devtools::document()
 
-df
+sampler = independent_length_sampler(
+  data = combine_observations(calibration_data, whale_data),
+  priors = list(
+    image_altitude = c(min = 0.1, max = 130),
+    altimeter_bias = rbind(
+      data.frame(altimeter = 'Barometer', mean = 0, sd = 1e2),
+      data.frame(altimeter = 'Laser', mean = 0, sd = 1e2)
+    ),
+    altimeter_variance = rbind(
+      data.frame(altimeter = 'Barometer', shape = .01, rate = .01),
+      data.frame(altimeter = 'Laser', shape = .01, rate = .01)
+    ),
+    pixel_variance = c(shape = .01, rate = .01),
+    object_lengths = c(min = .01, max = 20)
+  )
+)
+
+output = sampler(niter = 1e4)
+
+output$objects$`6 TL.pix 1`
+
+

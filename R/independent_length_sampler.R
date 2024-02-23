@@ -1,19 +1,47 @@
-#' Build an MCMC sampler that only uses calibration data to estimate measurement 
-#' error parameters
-#'
+#' Build an MCMC sampler that uses calibration data to estimate independent,
+#' unknown lengths
+#' 
 #' @import nimble
 #'
 #' @export
 #' 
-calibration_sampler = function(data, priors) {
+independent_length_sampler = function(data, priors) {
   
   validate_training_objects(data$training_objects)
   
-  # exclude prediction objects from model
-  data$prediction_objects = NULL
+  validate_prediction_objects(data$prediction_objects)
   
   # initialize analysis package
   pkg = flatten_data(data = data, priors = priors)
+  
+  #
+  # set length priors
+  #
+  
+  pkg$constants$n_basic_objects = nrow (data$prediction_objects)
+  
+  pkg$constants$prior_basic_object = matrix(
+    data = priors$object_lengths, 
+    nrow = pkg$constants$n_basic_objects,
+    ncol = 2,
+    byrow = TRUE
+  )
+  
+  pkg$constants$basic_object_ind = data$prediction_objects %>% 
+    left_join(
+      y = pkg$maps$objects %>% mutate(ind = 1:n()),
+      by = c('Subject', 'Measurement', 'Timepoint')
+    ) %>% 
+    select(ind) %>% 
+    unlist() %>% 
+    as.numeric()
+  
+  pkg$inits$object_length[pkg$constants$basic_object_ind] = apply(
+    X = pkg$constants$prior_basic_object, 
+    MARGIN = 1, 
+    FUN = function(x) runif(n = 1, min = x[1], max = x[2])
+  )
+  
   
   #
   # build model
@@ -63,6 +91,11 @@ calibration_sampler = function(data, priors) {
     if(verbose) message('Extracting pixel error output')
     res$pixel_error = format_pixel_output(
       pkg = pkg, samples = samples, post_inds = post_inds
+    )
+    if(verbose) message('Extracting object output')
+    res$objects = format_object_output(
+      pkg = pkg, samples = samples, post_inds = post_inds, 
+      prediction_objects = data$prediction_objects
     )
     if(verbose) message('Extracting summaries')
     res$summaries = lapply(res, function(component) {

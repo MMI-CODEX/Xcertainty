@@ -3,6 +3,7 @@
 export(build_sampler)
 export(calibration_sampler)
 export(combine_observations)
+export(independent_length_sampler)
 export(parse_observations)
 import(dplyr)
 import(nimble)

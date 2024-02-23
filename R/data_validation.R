@@ -21,6 +21,15 @@ validate_pixel_counts = function(x, error = 'stop', verbose = TRUE) {
     )
   }
   
+  # subject and measurement columns must be character vectors
+  character_columns = c('Subject', 'Measurement')
+  if(!all(sapply(x[,character_columns], class) == 'character')) {
+    handle_error(
+      msg = 'Subject and Measurement columns must be character vectors',
+      action = error
+    )
+  }
+  
   # need at least one measurement
   if(nrow(x) < 1) {
     handle_error(msg = 'Must include at least one measurement to analyze.', 
@@ -73,6 +82,15 @@ validate_training_objects = function(x, error = 'stop', verbose = TRUE) {
     )
   }
   
+  # subject and measurement columns must be character vectors
+  character_columns = c('Subject', 'Measurement')
+  if(!all(sapply(x[,character_columns], class) == 'character')) {
+    handle_error(
+      msg = 'Subject and Measurement columns must be character vectors',
+      action = error
+    )
+  }
+  
   # only one true length for each training object
   if(nrow(x) != nrow(x %>% select(Subject, Measurement, Timepoint) %>% 
                      unique())) {
@@ -110,6 +128,15 @@ validate_prediction_objects = function(x, error = 'stop', verbose = TRUE) {
       msg = paste('Column(s)',
                   paste(setdiff(required, colnames(x)), collapse = ', '),
                   'not found in x'),
+      action = error
+    )
+  }
+  
+  # subject and measurement columns must be character vectors
+  character_columns = c('Subject', 'Measurement')
+  if(!all(sapply(x[,character_columns], class) == 'character')) {
+    handle_error(
+      msg = 'Subject and Measurement columns must be character vectors',
       action = error
     )
   }

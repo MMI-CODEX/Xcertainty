@@ -212,6 +212,11 @@ flatten_data = function(
   pkg$data$pixel_count_observed = pixel_counts$PixelCount
   
   pkg$constants$n_pixel_counts = length(pkg$data$pixel_count_observed)
+  
+  # turn off all length models by default
+  pkg$constants$n_basic_objects = 0
+  pkg$constants$n_basic_object_length_constraints = 0
+  pkg$constants$n_growth_curve_subjects = 0
  
   class(pkg) = 'data.flattened'
   pkg
