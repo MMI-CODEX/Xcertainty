@@ -98,6 +98,7 @@ template_model = nimble::nimbleCode({
     t0 ~ dnorm(mean = prior_t0[1], sd = prior_t0[2])
     K ~ dnorm(mean = prior_K[1], sd = prior_K[2])
     
+    # TODO: consider replacing sex with a more generic "group" specification
     # Priors for mean growth curve asymptote and effect of birth year (by sex)
     for(sex in 1:2) {
       A[sex] ~ dnorm(
@@ -140,6 +141,9 @@ template_model = nimble::nimbleCode({
     
     ## Additional monitors
     
+    # TODO: remove monitors from model, but post-processing functions that 
+    # help compute the same information
+    # 
     # Monitor relationship with birth year
     for (yy in 1:81) {
       b_pred[yy] <- breakFun(yy, delta)
