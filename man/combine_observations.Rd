@@ -59,22 +59,7 @@ whale_data = parse_observations(
 # TODO: Make some vignettes that show how to reproduce enrico's analyses, etc.
 
 # TODO: Make sure we offer some sort of developer's guide, so they can add their
-# own models too... in this sense, maybe we push some of enrico's model back to
-# enrico.  naturally, we'll need to provide some sort of example workflow for 
-# how to make the required modifications and link a model in to code.  so, it 
-# might be reasonable to start working on implementing the simpler models first,
-# since the work done here will still be informative toward re-implementing a 
-# growth curve model
-
-# TODO: expand the model to account for time trends.  By default, add 
-# constraints whereever we see timepoints increasing.  Naturally, this could 
-# be challenging because we might only want to make this assumption for length
-# measurements, not width measurements.  so, we'll need to check with KC about
-# the function name/interface.  but, the overall idea is that we're doing a 
-# decent job of creating a workflow for implementing different model structures.
-# so, what will the naming conventions be for these types of "build_sampler" 
-# objects? or will it just be "build_sampler" with different "length_model" 
-# options and additional arguments?
+# own models too
 
 sampler = calibration_sampler(
   data = combine_observations(calibration_data, whale_data),
