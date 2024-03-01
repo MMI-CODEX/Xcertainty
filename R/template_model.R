@@ -82,8 +82,8 @@ template_model = nimble::nimbleCode({
   if(n_basic_object_length_constraints > 0) {
     for(i in 1:n_basic_object_length_constraints) {
       basic_object_length_constraint[i] ~ dconstraint(
-        object_length[basic_object_length_constraint_ind[i, 1]] > 
-        object_length[basic_object_length_constraint_ind[i, 2]]
+        object_length[basic_object_length_constraint_ind[i, 2]] >=
+        object_length[basic_object_length_constraint_ind[i, 1]]
       )
     }
   }

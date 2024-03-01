@@ -5,7 +5,7 @@
 #'
 #' @export
 #' 
-independent_length_sampler = function(data, priors) {
+nondecreasing_length_sampler = function(data, priors) {
   
   validate_training_objects(data$training_objects)
   
@@ -27,6 +27,8 @@ independent_length_sampler = function(data, priors) {
     byrow = TRUE
   )
   
+  # TODO: continue to see if there is a way to reduce the amount of code 
+  # duplication
   pkg$constants$basic_object_ind = data$prediction_objects %>% 
     left_join(
       y = pkg$maps$objects %>% mutate(ind = 1:n()),
@@ -36,11 +38,61 @@ independent_length_sampler = function(data, priors) {
     unlist() %>% 
     as.numeric()
   
+  # preliminarily initialize object lengths
   pkg$inits$object_length[pkg$constants$basic_object_ind] = apply(
     X = pkg$constants$prior_basic_object, 
     MARGIN = 1, 
     FUN = function(x) runif(n = 1, min = x[1], max = x[2])
   )
+  
+  # identify objects to model with non-decreasing lengths over time
+  temporal_targets = data$prediction_objects %>% 
+    group_by(Subject, Measurement) %>% 
+    summarise(number_timepoints = n()) %>% 
+    ungroup() %>%
+    filter(number_timepoints > 1) %>% 
+    select(Subject, Measurement)
+  
+  # encode non-decreasing length constraints; re-initialize impacted objects
+  if(nrow(temporal_targets) > 0) {
+    # initialize non-decreasing length constraint definitions in model
+    pkg$constants$basic_object_length_constraint_ind = matrix(
+      nrow = 0, ncol = 2
+    )
+    # add non-decreasing length constraints to model
+    for(row_ind in 1:nrow(temporal_targets)) {
+      # object ids in order of non-decreasing length
+      object_ordering = temporal_targets[row_ind,] %>% 
+        left_join(
+          y = pkg$maps$objects %>% mutate(ind = 1:n()),
+          by = c('Subject', 'Measurement')
+        ) %>% 
+        arrange(Timepoint) %>% 
+        select(ind) %>% 
+        unlist()  %>% 
+        as.numeric()
+      # organize into a constraint definition matrix
+      object_constraints = cbind(
+        object_ordering[1:(length(object_ordering)-1)], object_ordering[-1]
+      )
+      # append constraints to model
+      pkg$constants$n_basic_object_length_constraints = 
+        pkg$constants$n_basic_object_length_constraints + 
+        nrow(object_constraints)
+      pkg$constants$basic_object_length_constraint_ind = rbind(
+        pkg$constants$basic_object_length_constraint_ind,
+        object_constraints
+      )
+      # re-sort inits so they respect the non-decreasing constraints
+      pkg$inits$object_length[object_constraints] = sort(
+        pkg$inits$object_length[object_constraints]
+      )
+    }
+    # finish nimble specification for non-decreasing length constraint
+    pkg$data$basic_object_length_constraint = rep(
+      1, pkg$constants$n_basic_object_length_constraints
+    )
+  }
   
   #
   # build model
@@ -49,13 +101,6 @@ independent_length_sampler = function(data, priors) {
   # TODO: extract the basic model building and compilation to a helper function
   # since this is extremely common code across models... basically, a 
   # "build_model" function that includes the initial pixel_count_expected info
-  #
-  # a strategy to do this would be to have a function that handles the details
-  # of the model fitting.  to specialize the function to each type of model, we 
-  # can ask 'users' to pass in a initialization function for the length priors,
-  # as well as additional information about what post-processing summaries to 
-  # run... this can be done as a string that will then run code for the selected
-  # options.
   
   mod = nimbleModel(
     code = template_model, constants = pkg$constants, data = pkg$data, 
@@ -65,9 +110,9 @@ independent_length_sampler = function(data, priors) {
   cmod = compileNimble(mod)
   
   if(!is.finite(cmod$calculate())) {
+    ll = sapply(cmod$getNodeNames(), function(x) cmod$calculate(x))
     stop('Model does not have a finite likelihood')
   }
-  
   
   #
   # build sampler

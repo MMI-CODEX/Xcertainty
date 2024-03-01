@@ -6,7 +6,7 @@ data("whales")
 
 # parse calibration study
 calibration_data = parse_observations(
-  x = calibration %>% filter(is.finite(Laser_Alt)), 
+  x = calibration, 
   subject_col = 'CO.ID',
   meas_col = 'Lpix', 
   tlen_col = 'CO.L', 
@@ -21,7 +21,7 @@ calibration_data = parse_observations(
 
 # parse field study
 whale_data = parse_observations(
-  x = whales%>% filter(is.finite(AltitudeLaser)), 
+  x = whales, 
   subject_col = 'whale_ID',
   meas_col = 'TL.pix', 
   image_col = 'Image', 
@@ -30,7 +30,8 @@ whale_data = parse_observations(
   flen_col = 'FocalLength', 
   iwidth_col = 'ImageWidth', 
   swidth_col = 'SensorWidth', 
-  uas_col = 'UAS'
+  uas_col = 'UAS',
+  timepoint_col = 'year'
 )
 
 # TODO: add additional post-processing scripts that can help replace the 
@@ -102,8 +103,59 @@ sampler = independent_length_sampler(
   )
 )
 
+
+
+# TODO: let users decide which output types they want, so they can get faster 
+# post-processing if they don't care about recovering image information, for 
+# example
 output = sampler(niter = 1e4)
 
-output$objects$`6 TL.pix 1`
+output$objects$`6 TL.pix 2020`
 
-output$summaries$altimeters
+output$summaries$altimeters %>% filter(parameter == 'variance')
+
+output$summaries$altimeters %>% filter(parameter == 'bias')
+
+devtools::document()
+
+sampler = nondecreasing_length_sampler(
+  data = combine_observations(calibration_data, whale_data),
+  priors = list(
+    image_altitude = c(min = 0.1, max = 130),
+    altimeter_bias = rbind(
+      data.frame(altimeter = 'Barometer', mean = 0, sd = 1e2),
+      data.frame(altimeter = 'Laser', mean = 0, sd = 1e2)
+    ),
+    altimeter_variance = rbind(
+      data.frame(altimeter = 'Barometer', shape = .01, rate = .01),
+      data.frame(altimeter = 'Laser', shape = .01, rate = .01)
+    ),
+    pixel_variance = c(shape = .01, rate = .01),
+    # TODO: make this similar to altimeter_bias priors, in which we can set 
+    # separate priors for each object if we desired
+    object_lengths = c(min = .01, max = 20)
+  )
+)
+
+output = sampler(niter = 1e4)
+
+output$summaries$altimeters %>% filter(parameter == 'variance')
+
+output$summaries$altimeters %>% filter(parameter == 'bias')
+
+output$summaries$objects %>% 
+  group_by(Subject, Measurement) %>% 
+  arrange(Timepoint) %>% 
+  summarise(min_diff = sort(diff(mean))[1]) %>% 
+  ungroup() %>% 
+  View()
+
+library(ggplot2)
+library(ggthemes)
+
+output$summaries$objects %>% 
+  filter(Subject == '196') %>% 
+  ggplot(aes(x = as.numeric(Timepoint), y = mean, ymin = lower, ymax = upper)) + 
+  geom_line() + 
+  geom_pointrange() + 
+  theme_few()
