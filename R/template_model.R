@@ -114,10 +114,17 @@ template_model = nimble::nimbleCode({
       )
     }
     
+    # missing demographic information for some individuals
+    if(n_missing_subject_groups > 0) {
+      for(i in 1:n_missing_subject_groups) {
+        subject_group[unknown_subject_group[i]] ~ dcat(
+          subject_group_distribution[1:n_groups]
+        )
+      }
+    }
+      
     # demographic information for each individual
     for(i in 1:n_growth_curve_subjects) {
-      # model group membership, set subject_group[i] = NA for missing/unknown
-      subject_group[i] ~ dcat(subject_group_distribution[1:n_groups])
       # Age offset and birth year for each individual (Cauchy prior)
       subject_age_offset[i] ~ T(dt(0, 1, 1), 0, 40) 
       subject_birth_year[i] <- 
@@ -138,7 +145,7 @@ template_model = nimble::nimbleCode({
     )
     
     # Individual-level asymptotic sizes
-    for (i in 1:n_growth_curve_subjects) {
+    for(i in 1:n_growth_curve_subjects) {
       # is individual asymptotic size based on pre or post-breakpoint model?
       asymptotic_model_indicator[i] <- breakFun(
         subject_birth_year[i], 
@@ -159,24 +166,28 @@ template_model = nimble::nimbleCode({
       )
     }
     
-    for(i in 1:n_non_calf_lengths) {
-      non_calf_length_age[i] <- non_calf_length_age_obs[i] + 
-        non_calf_length_age_type[i] * 
-        subject_age_offset[non_calf_length_subject[i]]
-      object_length[non_calf_length[i]] <- 
-        subject_asymptotic_size[non_calf_length_subject[i]] * (
-          1 - exp( -growth_rate * (non_calf_length_age[i] - zero_length_age) )
-        )
+    if(n_non_calf_lengths > 0) {
+      for(i in 1:n_non_calf_lengths) {
+        non_calf_length_age[i] <- non_calf_length_age_obs[i] + 
+          non_calf_length_age_type[i] * 
+          subject_age_offset[non_calf_length_subject[i]]
+        object_length[non_calf_length[i]] <- 
+          subject_asymptotic_size[non_calf_length_subject[i]] * (
+            1 - exp( -growth_rate * (non_calf_length_age[i] - zero_length_age) )
+          )
+      }
     }
     
-    # for (i in 1:n_calf_lengths) {
-    #   object_length[calf_length[i]] ~ dunif(
-    #     min = min_calf_length,
-    #     max = subject_asymptotic_size[calf_length_subject[i]] * (
-    #       1 - exp( -growth_rate * (1 - zero_length_age) )
-    #     )
-    #   )
-    # }
+    if(n_calf_lengths > 0) {
+      for(i in 1:n_calf_lengths) {
+        object_length[calf_length[i]] ~ dunif(
+          min = min_calf_length,
+          max = subject_asymptotic_size[calf_length_subject[i]] * (
+            1 - exp( -growth_rate * (1 - zero_length_age) )
+          )
+        )
+      }
+    }
     
   }
   

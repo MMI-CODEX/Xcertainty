@@ -35,8 +35,6 @@ whale_data = parse_observations(
   timepoint_col = 'year'
 )
 
-devtools::document()
-# debugonce(growth_curve_sampler)
 sampler = growth_curve_sampler(
   data = combine_observations(calibration_data, whale_data),
   priors = list(
@@ -73,24 +71,3 @@ sampler = growth_curve_sampler(
 )
 
 output = sampler(niter = 1e4)
-
-output$summaries$altimeters %>% filter(parameter == 'variance')
-
-output$summaries$altimeters %>% filter(parameter == 'bias')
-
-output$summaries$objects %>% 
-  group_by(Subject, Measurement) %>% 
-  arrange(Timepoint) %>% 
-  summarise(min_diff = sort(diff(mean))[1]) %>% 
-  ungroup() %>% 
-  View()
-
-library(ggplot2)
-library(ggthemes)
-
-output$summaries$objects %>% 
-  filter(Subject == '196') %>% 
-  ggplot(aes(x = as.numeric(Timepoint), y = mean, ymin = lower, ymax = upper)) + 
-  geom_line() + 
-  geom_pointrange() + 
-  theme_few()

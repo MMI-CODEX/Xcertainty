@@ -65,7 +65,7 @@ growth_curve_sampler = function(data, priors, subject_info) {
   pkg$inits$group_asymptotic_size_trend = 
     pkg$constants$prior_group_asymptotic_size_trend[, 'mean']
   
-  pkg$data$subject_group = data.frame(
+  pkg$inits$subject_group = data.frame(
     Subject = pkg$maps$growth_curve$subjects
   ) %>% 
     left_join(
@@ -86,6 +86,20 @@ growth_curve_sampler = function(data, priors, subject_info) {
   pkg$constants$subject_group_distribution = priors$subject_group_distribution[
     pkg$maps$growth_curve$groups
   ]
+  
+  pkg$constants$unknown_subject_group = which(is.na(pkg$inits$subject_group))
+  
+  pkg$constants$n_missing_subject_groups = length(
+    pkg$constants$unknown_subject_group
+  )
+  
+  pkg$inits$subject_group[
+    pkg$constants$unknown_subject_group
+  ] = sample(
+    x = seq_along(pkg$maps$growth_curve$groups), 
+    size = pkg$constants$n_missing_subject_groups, 
+    replace = TRUE
+  )
   
   pkg$constants$year_minimum = priors$year_minimum
   
@@ -130,7 +144,7 @@ growth_curve_sampler = function(data, priors, subject_info) {
   )
   
   pkg$inits$subject_asymptotic_size = pkg$inits$group_asymptotic_size[
-    pkg$data$subject_group
+    pkg$inits$subject_group
   ] %>% unname()
   pkg$inits$subject_asymptotic_size[is.na(pkg$inits$subject_asymptotic_size)] =
     mean(pkg$inits$subject_asymptotic_size, na.rm = TRUE)
@@ -144,7 +158,6 @@ growth_curve_sampler = function(data, priors, subject_info) {
       y = subject_info %>% mutate(Subject = as.character(Subject)),
       by = c('Subject', 'Timepoint' = 'Year')
     ) %>% 
-    filter(complete.cases(.)) %>% 
     mutate(
       is_calf = (ObservedAge == 0) & (AgeType == 'known age')
     ) %>% 
@@ -174,15 +187,12 @@ growth_curve_sampler = function(data, priors, subject_info) {
   
   pkg$constants$min_calf_length = priors$min_calf_length
   
+  pkg$inits$object_length[pkg$constants$calf_length] = 
+    pkg$constants$min_calf_length
+  
   #
   # build model
   #
-  
-  # TODO: extract the basic model building and compilation to a helper function
-  # since this is extremely common code across models... basically, a 
-  # "build_model" function that includes the initial pixel_count_expected info
-  
-  browser()
   
   mod = nimbleModel(
     code = template_model, constants = pkg$constants, data = pkg$data, 
@@ -206,8 +216,10 @@ growth_curve_sampler = function(data, priors, subject_info) {
   
   cfg = configureMCMC(mod)
   
-  # TODO: Make sure all important derived variables are added to the sampler 
-  # monitors
+  cfg$addMonitors(
+    c('subject_birth_year', 'subject_asymptotic_size', 'non_calf_length_age',
+      'object_length')
+  )
   
   sampler = buildMCMC(cfg)
   
@@ -230,6 +242,10 @@ growth_curve_sampler = function(data, priors, subject_info) {
     if(verbose) message('Extracting object output')
     res$objects = format_object_output(
       pkg, samples, post_inds, data$prediction_objects
+    )
+    if(verbose) message('Extracting growth curve model output')
+    res$growth_curve = format_growth_curve_output(
+      pkg, samples, post_inds
     )
     if(verbose) message('Extracting summaries')
     res$summaries = extract_summaries(res)
