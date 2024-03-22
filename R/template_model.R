@@ -87,96 +87,96 @@ template_model = nimble::nimbleCode({
       )
     }
   }
-  
-  # TODO: consider potential namespace issues if multiple models have 
-  # overlapping parameter names and are all active
-  # 
+   
   # whale growth curve model, intended to be applied to an animal's total length
   if(n_growth_curve_subjects > 0) {
     
-    # Growth curve parameters
-    t0 ~ dnorm(mean = prior_t0[1], sd = prior_t0[2])
-    K ~ dnorm(mean = prior_K[1], sd = prior_K[2])
     
-    # TODO: consider replacing sex with a more generic "group" specification
-    # Priors for mean growth curve asymptote and effect of birth year (by sex)
-    for(sex in 1:2) {
-      A[sex] ~ dnorm(
-        mean = prior_A[sex, 1], 
-        sd = prior_A[sex, 2]
+    # (common) growth curve temporal "intercept"
+    zero_length_age ~ dnorm(
+      mean = prior_zero_length_age[1], sd = prior_zero_length_age[2]
+    )
+    
+    # (common) growth curve growth rate
+    growth_rate ~ dnorm(
+      mean = prior_growth_rate[1], sd = prior_growth_rate[2]
+    )
+    
+    # priors for group-level, average asymptotic sizes and temporal trends
+    for(i in 1:n_groups) {
+      group_asymptotic_size[i] ~ dnorm(
+        mean = prior_group_asymptotic_size[i, 1], 
+        sd = prior_group_asymptotic_size[i, 2]
       )
-      upsilon[sex] ~ dnorm(
-        mean = prior_upsilon[sex, 1], 
-        sd = prior_upsilon[sex, 2]
+      group_asymptotic_size_trend[i] ~ dnorm(
+        mean = prior_group_asymptotic_size_trend[i, 1],
+        sd = prior_group_asymptotic_size_trend[i, 2]
       )
     }
     
-    # Age offset for each individual (Cauchy prior) and birth year
+    # demographic information for each individual
+    for(i in 1:n_growth_curve_subjects) {
+      # model group membership, set subject_group[i] = NA for missing/unknown
+      subject_group[i] ~ dcat(subject_group_distribution[1:n_groups])
+      # Age offset and birth year for each individual (Cauchy prior)
+      subject_age_offset[i] ~ T(dt(0, 1, 1), 0, 40) 
+      subject_birth_year[i] <- 
+        subject_birth_year_minimum[i] - 
+        subject_age_type[i] * subject_age_offset[i] - 
+        year_minimum
+    }
+    
+    # individual variation around average asymptotic sizes
+    asymptotic_size_sd ~ dunif(
+      min = prior_asymptotic_size_sd[1], max = prior_asymptotic_size_sd[2]
+    )
+    
+    # year when growth curve shifts (i.e., break point)
+    group_size_shift_start_year ~ dunif(
+      min = prior_group_size_shift_start_year[1], 
+      max = prior_group_size_shift_start_year[2]
+    )
+    
+    # Individual-level asymptotic sizes
     for (i in 1:n_growth_curve_subjects) {
-      age_offset[i] ~ T(dt(0, 1, 1), 0, 40) 
-      B[i] <- B_min[i] - age_type_i[i] * age_offset[i] - 1940
+      # is individual asymptotic size based on pre or post-breakpoint model?
+      asymptotic_model_indicator[i] <- breakFun(
+        subject_birth_year[i], 
+        group_size_shift_start_year
+      )
+      # realized group-level, average asymptotic sizes and temporal trends
+      expected_subject_asymptotic_size[i] <- 
+        asymptotic_model_indicator[i] * 
+          group_asymptotic_size[subject_group[i]] +
+        (1 - asymptotic_model_indicator[i]) * (
+          group_asymptotic_size[subject_group[i]] + 
+          group_asymptotic_size_trend[subject_group[i]] * 
+            (subject_birth_year[i] - group_size_shift_start_year)
+        )
+      # individual-level asymptotic size
+      subject_asymptotic_size[i] ~ dnorm(
+        mean = expected_subject_asymptotic_size[i], sd = asymptotic_size_sd
+      )
     }
     
-    # Sex of individuals of unknown sex
-    for (u in 1:N_sexNA) {
-      sex[unk_sex[u]] ~ dcat(p_sex[1:2])
+    for(i in 1:n_non_calf_lengths) {
+      non_calf_length_age[i] <- non_calf_length_age_obs[i] + 
+        non_calf_length_age_type[i] * 
+        subject_age_offset[non_calf_length_subject[i]]
+      object_length[non_calf_length[i]] <- 
+        subject_asymptotic_size[non_calf_length_subject[i]] * (
+          1 - exp( -growth_rate * (non_calf_length_age[i] - zero_length_age) )
+        )
     }
     
-    # Process error around mean asymptote (SD)
-    sigma_A ~ dunif(0, 10) 
-    
-    # Break point (between 1990 and 2015, i.e. y = 50 and 75)
-    delta ~ dunif(50, 75)
-    
-    # Individual-specific asymptote
-    for (i in 1:N_inds) {
-      b[i] <- breakFun(B[i], delta)
-      A_i_mean[i] <- 
-        b[i] * A[sex[i]] +
-        (1 - b[i]) * (A[sex[i]] + upsilon[sex[i]] * 
-                        (B[i] - delta))
-      A_i[i] ~ dnorm(A_i_mean[i], sd = sigma_A)
-    }
-    
-    
-    ## Additional monitors
-    
-    # TODO: remove monitors from model, but post-processing functions that 
-    # help compute the same information
-    # 
-    # Monitor relationship with birth year
-    for (yy in 1:81) {
-      b_pred[yy] <- breakFun(yy, delta)
-      A_pred[yy, 1] <- 
-        b_pred[yy] * A[1] +
-        (1 - b_pred[yy]) * (A[1] + upsilon[1] * (yy - delta))
-      A_pred[yy, 2] <- 
-        b_pred[yy] * A[2] +
-        (1 - b_pred[yy]) * (A[2] + upsilon[2] * (yy - delta))
-    }
-    
-    
-    ## Likelihood for growth model
-    
-    # Estimate length for each individual in each year
-    for (j in 1:N_unknown_lengths_nc) {
-      
-      # Age (offset is fixed by individual)
-      y[nc[j]] <- age_obs[nc[j]] + age_type[nc[j]] * age_offset[ind[nc[j]]]
-      
-      # Expected length based on growth model and individual-specific asyumptote
-      object_length[L_unknown_inds[nc[j]]] <- 
-        A_i[ind[nc[j]]] * 
-        (1 - exp(-K * (y[nc[j]] - t0))) 
-    }
-    
-    # Calves
-    for (j in 1:N_calves) {
-      object_length[L_unknown_inds[calves[j]]] ~ dunif(3.5,
-                                           A_i[ind[calves[j]]] *
-                                             (1 - exp(-K * (1 - t0))))
-    }
-    
+    # for (i in 1:n_calf_lengths) {
+    #   object_length[calf_length[i]] ~ dunif(
+    #     min = min_calf_length,
+    #     max = subject_asymptotic_size[calf_length_subject[i]] * (
+    #       1 - exp( -growth_rate * (1 - zero_length_age) )
+    #     )
+    #   )
+    # }
     
   }
   

@@ -2,99 +2,177 @@
 #' unknown lengths
 #' 
 #' @import nimble
+#' 
+#' @example examples/growth_curve_sampler.R
 #'
 #' @export
 #' 
-growth_curve_sampler = function(data, priors) {
+growth_curve_sampler = function(data, priors, subject_info) {
   
   validate_training_objects(data$training_objects)
   
   validate_prediction_objects(data$prediction_objects)
   
+  # validate subject-group information
+  ambiguous_subject_group_info = subject_info %>% 
+    group_by(Subject) %>% 
+    summarise(ngroups = length(unique(Group))) %>% 
+    filter(ngroups > 1)
+  if(nrow(ambiguous_subject_group_info) > 0) {
+    stop('Subjects in argument "subject_info" must have one group definition')
+  }
+  
   # initialize analysis package
   pkg = flatten_data(data = data, priors = priors)
   
   #
-  # set length priors
+  # configure growth curve model
   #
   
-  pkg$constants$n_basic_objects = nrow (data$prediction_objects)
+  pkg$maps$growth_curve = list()
   
-  pkg$constants$prior_basic_object = matrix(
-    data = priors$object_lengths, 
-    nrow = pkg$constants$n_basic_objects,
-    ncol = 2,
-    byrow = TRUE
-  )
+  pkg$maps$growth_curve$subjects = unique(subject_info$Subject)
   
-  # TODO: continue to see if there is a way to reduce the amount of code 
-  # duplication
-  pkg$constants$basic_object_ind = data$prediction_objects %>% 
+  pkg$constants$n_growth_curve_subjects = length(pkg$maps$growth_curve$subjects)
+  
+  pkg$constants$prior_zero_length_age = priors$zero_length_age
+  
+  pkg$inits$zero_length_age = pkg$constants$prior_zero_length_age['mean']
+  
+  pkg$constants$prior_growth_rate = priors$growth_rate
+  
+  pkg$inits$growth_rate = pkg$constants$prior_growth_rate['mean']
+  
+  # identify groups, excluding NA's
+  pkg$maps$growth_curve$groups = unique(subject_info$Group)
+  pkg$maps$growth_curve$groups = pkg$maps$growth_curve$groups[
+    !is.na(pkg$maps$growth_curve$groups)
+  ]
+  
+  pkg$constants$n_groups = length(pkg$maps$growth_curve$groups)
+  
+  pkg$constants$prior_group_asymptotic_size = priors$group_asymptotic_size[
+    pkg$maps$growth_curve$groups,
+  ]
+  
+  pkg$inits$group_asymptotic_size = pkg$constants$prior_group_asymptotic_size[
+    , 'mean'
+  ]
+  
+  pkg$constants$prior_group_asymptotic_size_trend = 
+    priors$group_asymptotic_size_trend[pkg$maps$growth_curve$groups,]
+  
+  pkg$inits$group_asymptotic_size_trend = 
+    pkg$constants$prior_group_asymptotic_size_trend[, 'mean']
+  
+  pkg$data$subject_group = data.frame(
+    Subject = pkg$maps$growth_curve$subjects
+  ) %>% 
     left_join(
-      y = pkg$maps$objects %>% mutate(ind = 1:n()),
-      by = c('Subject', 'Measurement', 'Timepoint')
+      y = subject_info %>% 
+        select(Subject, Group) %>% 
+        unique(),
+      by = 'Subject'
     ) %>% 
-    select(ind) %>% 
+    left_join(
+      y = data.frame(Group = pkg$maps$growth_curve$groups) %>% 
+        mutate(group_ind = 1:n()),
+      by = 'Group'
+    ) %>% 
+    select(group_ind) %>% 
     unlist() %>% 
-    as.numeric()
+    unname()
   
-  # preliminarily initialize object lengths
-  pkg$inits$object_length[pkg$constants$basic_object_ind] = apply(
-    X = pkg$constants$prior_basic_object, 
-    MARGIN = 1, 
-    FUN = function(x) runif(n = 1, min = x[1], max = x[2])
+  pkg$constants$subject_group_distribution = priors$subject_group_distribution[
+    pkg$maps$growth_curve$groups
+  ]
+  
+  pkg$constants$year_minimum = priors$year_minimum
+  
+  pkg$maps$growth_curve$age_type = data.frame(
+    AgeType = c('known age', 'min age'),
+    AgeTypeValue = c(0, 1)
   )
   
-  # identify objects to model with non-decreasing lengths over time
-  temporal_targets = data$prediction_objects %>% 
-    group_by(Subject, Measurement) %>% 
-    summarise(number_timepoints = n()) %>% 
-    ungroup() %>%
-    filter(number_timepoints > 1) %>% 
-    select(Subject, Measurement)
-  
-  # encode non-decreasing length constraints; re-initialize impacted objects
-  if(nrow(temporal_targets) > 0) {
-    # initialize non-decreasing length constraint definitions in model
-    pkg$constants$basic_object_length_constraint_ind = matrix(
-      nrow = 0, ncol = 2
+  # summarize minimum birth year data by subject
+  df = data.frame(
+    Subject = pkg$maps$growth_curve$subjects
+  ) %>% 
+    left_join(
+      y = subject_info %>% 
+        mutate(min_birth_year = Year - ObservedAge) %>% 
+        group_by(Subject) %>%
+        arrange(AgeType, min_birth_year) %>% 
+        slice(1) %>% 
+        ungroup(),
+      by = 'Subject'
+    ) %>%
+    left_join(
+      y = pkg$maps$growth_curve$age_type,
+      by = 'AgeType'
     )
-    # add non-decreasing length constraints to model
-    for(row_ind in 1:nrow(temporal_targets)) {
-      # object ids in order of non-decreasing length
-      object_ordering = temporal_targets[row_ind,] %>% 
-        left_join(
-          y = pkg$maps$objects %>% mutate(ind = 1:n()),
-          by = c('Subject', 'Measurement')
-        ) %>% 
-        arrange(Timepoint) %>% 
-        select(ind) %>% 
-        unlist()  %>% 
-        as.numeric()
-      # organize into a constraint definition matrix
-      object_constraints = cbind(
-        object_ordering[1:(length(object_ordering)-1)], object_ordering[-1]
-      )
-      # append constraints to model
-      pkg$constants$n_basic_object_length_constraints = 
-        pkg$constants$n_basic_object_length_constraints + 
-        nrow(object_constraints)
-      pkg$constants$basic_object_length_constraint_ind = rbind(
-        pkg$constants$basic_object_length_constraint_ind,
-        object_constraints
-      )
-      # re-sort inits so they respect the non-decreasing constraints
-      pkg$inits$object_length[object_constraints] = sort(
-        pkg$inits$object_length[object_constraints]
-      )
-    }
-    # finish nimble specification for non-decreasing length constraint
-    pkg$data$basic_object_length_constraint = rep(
-      1, pkg$constants$n_basic_object_length_constraints
-    )
-  }
   
-  # TODO: reconfigure for growth curve template model
+  pkg$constants$subject_birth_year_minimum = df$min_birth_year
+  
+  pkg$inits$subject_age_offset = rep(1, pkg$constants$n_growth_curve_subjects)
+  
+  pkg$constants$subject_age_type = df$AgeTypeValue
+  
+  pkg$constants$prior_asymptotic_size_sd = priors$asymptotic_size_sd
+  
+  pkg$inits$asymptotic_size_sd = mean(pkg$constants$prior_asymptotic_size_sd)
+  
+  pkg$constants$prior_group_size_shift_start_year = 
+    priors$group_size_shift_start_year
+  
+  pkg$inits$group_size_shift_start_year = mean(
+    pkg$constants$prior_group_size_shift_start_year
+  )
+  
+  pkg$inits$subject_asymptotic_size = pkg$inits$group_asymptotic_size[
+    pkg$data$subject_group
+  ] %>% unname()
+  pkg$inits$subject_asymptotic_size[is.na(pkg$inits$subject_asymptotic_size)] =
+    mean(pkg$inits$subject_asymptotic_size, na.rm = TRUE)
+  
+  # enrich object lengths with additional subject information
+  df = pkg$maps$objects %>% 
+    mutate(
+      object_ind = 1:n()
+    ) %>% 
+    left_join(
+      y = subject_info %>% mutate(Subject = as.character(Subject)),
+      by = c('Subject', 'Timepoint' = 'Year')
+    ) %>% 
+    filter(complete.cases(.)) %>% 
+    mutate(
+      is_calf = (ObservedAge == 0) & (AgeType == 'known age')
+    ) %>% 
+    left_join(
+      y = pkg$maps$growth_curve$age_type,
+      by = 'AgeType'
+    ) %>% 
+    left_join(
+      y = data.frame(Subject = as.character(pkg$maps$growth_curve$subjects)) %>% 
+        mutate(subject_ind = 1:n()),
+      by = 'Subject'
+    )
+  
+  # process length measurements of non-calves
+  non_calf_objects = df %>% filter(is_calf == FALSE)
+  pkg$constants$n_non_calf_lengths = nrow(non_calf_objects)
+  pkg$constants$non_calf_length_age_obs = non_calf_objects$ObservedAge
+  pkg$constants$non_calf_length_age_type = non_calf_objects$AgeTypeValue
+  pkg$constants$non_calf_length_subject = non_calf_objects$subject_ind
+  pkg$constants$non_calf_length = non_calf_objects$object_ind
+  
+  # process length measurements of calves
+  calf_objects = df %>% filter(is_calf == TRUE)
+  pkg$constants$n_calf_lengths = nrow(calf_objects)
+  pkg$constants$calf_length = calf_objects$object_ind
+  pkg$constants$calf_length_subject = calf_objects$subject_ind
+  
+  pkg$constants$min_calf_length = priors$min_calf_length
   
   #
   # build model
@@ -103,6 +181,8 @@ growth_curve_sampler = function(data, priors) {
   # TODO: extract the basic model building and compilation to a helper function
   # since this is extremely common code across models... basically, a 
   # "build_model" function that includes the initial pixel_count_expected info
+  
+  browser()
   
   mod = nimbleModel(
     code = template_model, constants = pkg$constants, data = pkg$data, 
@@ -113,6 +193,10 @@ growth_curve_sampler = function(data, priors) {
   
   if(!is.finite(cmod$calculate())) {
     ll = sapply(cmod$getNodeNames(), function(x) cmod$calculate(x))
+    non_finite_nodes = names(ll[!is.finite(ll)])
+    non_finite_node_groups = unique(gsub(
+      pattern = '\\[.*\\]', replacement = '', x = non_finite_nodes
+    ))
     stop('Model does not have a finite likelihood')
   }
   

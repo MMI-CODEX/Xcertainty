@@ -50,3 +50,30 @@
 #' }
 #' @source \url{TODO: fill in data citation}
 'whales'
+
+#' Metadata about whale observations
+#'
+#' A dataset containing additional information about whales for which 
+#' measurements were taken
+#' 
+#' TODO: update column descriptions
+#'
+#' @format A data frame with 76 rows and 8 variables:
+#' \describe{
+#'   \item{whale_id}{Name of measured whale}
+#'   \item{image}{Name of image measurements are taken from}
+#'   \item{TL}{The whale's length in the image, in pixels}
+#'   \item{TL.XX.0..Width}{The whale's width in the image, in pixels.  The width 
+#'         is measured at XX% of the way toward the whale's head, from its 
+#'         tail.}
+#'   \item{barometer_altitude}{The altitude (in meters) at which the image was 
+#'         taken, according to the onboard barometer}
+#'   \item{laser_altitude}{The altitude (in meters) at which the image was 
+#'         taken, according to the attached laser altimeter}
+#'   \item{focal_length}{The focal length of the lens when the image was taken, 
+#'         in mm}
+#'   \item{image_width}{The width of the image, in pixels}
+#'   \item{sensor_width}{The width of the camera sensor, in mm}
+#' }
+#' @source \url{TODO: fill in data citation}
+'whale_info'
