@@ -85,4 +85,7 @@ sampler = growth_curve_sampler(
 )
 
 output = sampler(niter = 1e4)
+
+# KCB: saving output to compare with other samplers in 'Output_play.Rmd'
+output_growth <- output
 }

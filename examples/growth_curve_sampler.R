@@ -71,3 +71,9 @@ sampler = growth_curve_sampler(
 )
 
 output = sampler(niter = 1e4)
+
+# KCB: saving output to compare with other samplers in 'Output_play.Rmd'
+output_growth <- output
+
+# let's save all the sampler outputs 
+save(output_cal, output_inde, output_nodec, output_growth, file = "data/sampler_outputs.rda")

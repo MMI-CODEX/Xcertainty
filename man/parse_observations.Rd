@@ -136,6 +136,8 @@ output$summaries$altimeters \%>\% filter(parameter == 'variance')
 
 output$summaries$altimeters \%>\% filter(parameter == 'bias')
 
+output_cal <- output
+
 devtools::document()
 
 sampler = independent_length_sampler(
@@ -165,10 +167,15 @@ sampler = independent_length_sampler(
 output = sampler(niter = 1e4)
 
 output$objects$`6 TL.pix 2020`
+output$objects$`6 TL.pix 2021`$summary
+output$objects$`196 TL.pix 2017`$summary
+output$objects$`196 TL.pix 2017`$samples
 
 output$summaries$altimeters \%>\% filter(parameter == 'variance')
 
 output$summaries$altimeters \%>\% filter(parameter == 'bias')
+
+output_inde <- output
 
 devtools::document()
 
@@ -192,6 +199,8 @@ sampler = nondecreasing_length_sampler(
 )
 
 output = sampler(niter = 1e4)
+
+output_nodec <- output # KCB: save outputs
 
 output$summaries$altimeters \%>\% filter(parameter == 'variance')
 
