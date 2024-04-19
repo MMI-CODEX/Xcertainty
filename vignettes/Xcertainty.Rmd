@@ -14,6 +14,10 @@ date: "2024-03-27"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r}
+library(Xcertainty)
+```
+
 TODOs: 
 * [] create documentation for 'calibration' (i.e., column info, GEMM Lab as owner, etc.)
 * [] create documentation for 'whales'

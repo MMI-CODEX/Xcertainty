@@ -32,37 +32,7 @@
 #' @param alt_conversion_col if not \code{NULL}, column name in \code{x} with 
 #'  an altitude used to convert measurement columns from lengths to pixels
 #' 
-#' @example 
-#' parse calibration study
-calibration_data = parse_observations(
-  x = calibration, 
-  subject_col = 'CO.ID',
-  meas_col = 'Lpix', 
-  tlen_col = 'CO.L', 
-  image_col = 'image', 
-  barometer_col = 'Baro_Alt',
-  laser_col = 'Laser_Alt', 
-  flen_col = 'Focal_Length', 
-  iwidth_col = 'Iw', 
-  swidth_col = 'Sw',
-  uas_col = 'uas'
-)
-
-#' parse field study
-whale_data = parse_observations(
-  x = whales, 
-  subject_col = 'whale_ID',
-  meas_col = 'TL.pix', 
-  image_col = 'Image', 
-  barometer_col = 'AltitudeBarometer',
-  laser_col = 'AltitudeLaser', 
-  flen_col = 'FocalLength', 
-  iwidth_col = 'ImageWidth', 
-  swidth_col = 'SensorWidth', 
-  uas_col = 'UAS',
-  timepoint_col = 'year'
-)
-
+#' @example  examples/example_parse_observations.R
 #' 
 #' @import dplyr
 #' @importFrom tidyr pivot_longer

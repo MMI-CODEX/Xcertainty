@@ -2,18 +2,26 @@
 % Please edit documentation in R/growth_curve_sampler.R
 \name{growth_curve_sampler}
 \alias{growth_curve_sampler}
-\title{Build an MCMC sampler that uses calibration data to estimate independent,
-unknown lengths}
+\title{MCMC sampler for measurements of individuals with replicates and age information to generate growth curve}
 \usage{
 growth_curve_sampler(data, priors, subject_info)
 }
+\value{
+outputs a function to run a sampler, the function arguments are: 
+\describe{
+ \item{niter}{set the number of iterations}
+ \item{burn}{set the number samples to discard}
+ \item{thin}{set the thinning rate}
+ }
+}
 \description{
 Build an MCMC sampler that uses calibration data to estimate independent,
-unknown lengths
+unknown measurements. This sampler is well suited for when individuals have 
+replicate measurements across time points and also have age information.
+This sampler uses these replicate samplers and age information to build 
+a von-Bertalanffy-Putter growth model, following Pirotta & Bierlich et al., (in revision)
 }
 \examples{
-devtools::document()
-
 # load example wide-format data
 data("calibration")
 data("whales")
@@ -85,10 +93,4 @@ sampler = growth_curve_sampler(
 )
 
 output = sampler(niter = 1e4)
-
-# KCB: saving output to compare with other samplers in 'Output_play.Rmd'
-output_growth <- output
-
-# let's save all the sampler outputs 
-save(output_cal, output_inde, output_nodec, output_growth, file = "data/sampler_outputs.rda")
 }

@@ -70,10 +70,10 @@ sampler = growth_curve_sampler(
   subject_info = whale_info
 )
 
-output = sampler(niter = 1e4)
+output = sampler(niter = 1e5)
 
 # KCB: saving output to compare with other samplers in 'Output_play.Rmd'
 output_growth <- output
 
 # let's save all the sampler outputs 
-save(output_cal, output_inde, output_nodec, output_growth, file = "data/sampler_outputs.rda")
+save(output, file = file.path("..", "kcb_outputs/dataframes/growth_outputs_240416.rda"))

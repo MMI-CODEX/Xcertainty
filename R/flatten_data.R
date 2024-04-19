@@ -23,6 +23,7 @@
 #' @import dplyr
 #' @import tidyr
 #' 
+#' @noRd
 flatten_data = function(
   data = NULL, priors, pixel_counts = data$pixel_counts, 
   training_objects = data$training_objects, image_info = data$image_info,

@@ -1,6 +1,9 @@
 #' Combine parsed observations into a single parsed object
 #' 
-#' @example examples/parse_observations.R
+#' Combine parsed observations, such as calibration and observation (whale) data into a single parsed object. 
+#' This combined, single parsed object can then be used as the data input for one of the samplers.
+#' 
+#' @example examples/example_parse_observations.R
 #' 
 #' @param ... Parsed datasets to combine (i.e., outputs from 
 #'   \code{Xcertainty::parsed_observations})

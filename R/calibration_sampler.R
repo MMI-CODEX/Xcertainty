@@ -1,7 +1,20 @@
+#' Build an MCMC sampler for calibration data
+#' 
 #' Build an MCMC sampler that only uses calibration data to estimate measurement 
 #' error parameters
 #'
 #' @import nimble
+#'
+#' @example  examples/example_calibration_sampler.R
+#'
+#'
+#' @return outputs a function to run a sampler, the function arguments are: 
+#' \describe{
+#'  \item{niter}{set the number of iterations}
+#'  \item{burn}{set the number samples to discard}
+#'  \item{thin}{set the thinning rate}
+#'  }
+#'
 #'
 #' @export
 #' 

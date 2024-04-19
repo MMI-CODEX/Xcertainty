@@ -2,12 +2,42 @@
 % Please edit documentation in R/independent_length_sampler.R
 \name{independent_length_sampler}
 \alias{independent_length_sampler}
-\title{Build an MCMC sampler that uses calibration data to estimate independent,
-unknown lengths}
+\title{MCMC sampler for measurements of individuals with no replicates or age information.}
 \usage{
 independent_length_sampler(data, priors)
 }
+\value{
+outputs a function to run a sampler, the function arguments are: 
+\describe{
+ \item{niter}{set the number of iterations}
+ \item{burn}{set the number samples to discard}
+ \item{thin}{set the thinning rate}
+ }
+}
 \description{
 Build an MCMC sampler that uses calibration data to estimate independent,
-unknown lengths
+unknown measurements. This sampler is well suited for when individuals have 
+no replicate measurements across time points and have no age information.
+}
+\examples{
+sampler = independent_length_sampler(
+  data = combine_observations(calibration_data, whale_data),
+  priors = list(
+    image_altitude = c(min = 0.1, max = 130),
+    altimeter_bias = rbind(
+      data.frame(altimeter = 'Barometer', mean = 0, sd = 1e2),
+      data.frame(altimeter = 'Laser', mean = 0, sd = 1e2)
+    ),
+    altimeter_variance = rbind(
+      data.frame(altimeter = 'Barometer', shape = .01, rate = .01),
+      data.frame(altimeter = 'Laser', shape = .01, rate = .01)
+    ),
+    pixel_variance = c(shape = .01, rate = .01),
+    # TODO: make this similar to altimeter_bias priors, in which we can set 
+    # separate priors for each object if we desired
+    object_lengths = c(min = .01, max = 20)
+  )
+)
+
+output = sampler = (niter = 1e4)
 }

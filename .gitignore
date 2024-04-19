@@ -47,3 +47,5 @@ README.html
 *.so
 *.o
 ..Rcheck/
+/doc/
+/Meta/

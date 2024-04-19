@@ -1,9 +1,23 @@
+#' MCMC sampler for measurements of individuals with replicates and age information to generate growth curve
+#' 
 #' Build an MCMC sampler that uses calibration data to estimate independent,
-#' unknown lengths
+#' unknown measurements. This sampler is well suited for when individuals have 
+#' replicate measurements across time points and also have age information.
+#' This sampler uses these replicate samplers and age information to build 
+#' a von-Bertalanffy-Putter growth model, following Pirotta & Bierlich et al., (in revision)
 #' 
 #' @import nimble
 #' 
-#' @example examples/growth_curve_sampler.R
+#' @example examples/example_growth_curve_sampler.R
+#' 
+#'
+#' @return outputs a function to run a sampler, the function arguments are: 
+#' \describe{
+#'  \item{niter}{set the number of iterations}
+#'  \item{burn}{set the number samples to discard}
+#'  \item{thin}{set the thinning rate}
+#'  }
+#'
 #'
 #' @export
 #' 

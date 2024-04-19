@@ -1,8 +1,22 @@
+#' MCMC sampler for measurements of individuals with replicates but no age information.
+#' 
 #' Build an MCMC sampler that uses calibration data to estimate independent,
-#' unknown lengths
+#' unknown measurements. This sampler is well suited for when individuals have 
+#' replicate measurements across time points but do not have age information.
 #' 
 #' @import nimble
 #'
+#' @example examples/example_nondecreasing_length_sampler.R
+#' 
+#' 
+#' @return outputs a function to run a sampler, the function arguments are: 
+#' \describe{
+#'  \item{niter}{set the number of iterations}
+#'  \item{burn}{set the number samples to discard}
+#'  \item{thin}{set the thinning rate}
+#'  }
+#'
+#' 
 #' @export
 #' 
 nondecreasing_length_sampler = function(data, priors) {
