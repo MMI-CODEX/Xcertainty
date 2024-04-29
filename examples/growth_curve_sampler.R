@@ -77,3 +77,59 @@ output_growth <- output
 
 # let's save all the sampler outputs 
 save(output, file = file.path("..", "kcb_outputs/dataframes/growth_outputs_240416.rda"))
+output = sampler(niter = 1e4)
+
+plot(mcmc(output$growth_curve$growth_rate$samples))
+
+output$growth_curve$growth_rate$summary
+.181
+# hasn't converged yet with O(1e4) samples, growth_rate parameter keeps increasing
+
+plot(mcmc(output$growth_curve$subject_asymptotic_size$samples))
+
+output$growth_curve$growth_rate$summary
+output$growth_curve$subject_asymptotic_size$summary
+output$summaries$altimeters %>% 
+  filter(parameter == 'variance')
+
+whale_data$pixel_counts %>% 
+  filter(
+    Subject == '364'
+  ) %>% 
+  left_join(
+    y = whale_data$image_info,
+    by = 'Image'
+  ) %>% 
+  mutate(
+    barometer_length = 
+      PixelCount * Barometer * SensorWidth / ImageWidth / FocalLength,
+    barometer_pX_length = 
+      PixelCount * (Barometer+1) * SensorWidth / ImageWidth / FocalLength,
+    laser_length = 
+      PixelCount * Laser * SensorWidth / ImageWidth / FocalLength
+  ) %>% 
+  select(
+    Timepoint,
+    Image,
+    UAS,
+    Barometer,
+    Laser,
+    barometer_length, 
+    barometer_pX_length,
+    laser_length
+  ) %>% 
+  # group_by(
+  #   Timepoint
+  # ) %>%
+  # summarise(
+  #   # min_barometer = min(barometer_length),
+  #   avg_barometer = mean(barometer_length),
+  #   # max_barometer = max(barometer_length),
+  #   cv = sd(barometer_length) / avg_barometer,
+  #   sd = sd(barometer_length),
+  #   n = n()
+  # ) %>% 
+  View()
+
+
+# 854, large uncty, but 2017 measurements just looked off, so what's up with that?

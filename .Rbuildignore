@@ -1,4 +1,10 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
-^doc$
-^Meta$
+.DS_Store
+.Rhistory
+.gitignore
+.Rproj.user
+.git/
+CODE_OF_CONDUCT.md
+cran-comments.md
+examples/
