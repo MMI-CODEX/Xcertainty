@@ -103,15 +103,15 @@ parse_observations = function(
   pixel_counts = xlong %>% 
     select(
       Subject = subject_col,
-      Measurement,
+      .data$Measurement,
       Timepoint = timepoint_col,
       Image = image_col,
-      PixelCount
+      .data$PixelCount
     ) %>% 
     unique() %>% 
     mutate(
-      Subject = as.character(Subject),
-      Measurement = as.character(Measurement)
+      Subject = as.character(.data$Subject),
+      Measurement = as.character(.data$Measurement)
     )
   
   # add a default, common timepoint if information not provided
@@ -126,14 +126,14 @@ parse_observations = function(
       filter(is.finite(.data[[tlen_col]])) %>% 
       dplyr::select(
         Subject = subject_col,
-        Measurement,
+        .data$Measurement,
         Timepoint = timepoint_col,
         Length = tlen_col
       ) %>% 
       unique() %>% 
       mutate(
-        Subject = as.character(Subject),
-        Measurement = as.character(Measurement)
+        Subject = as.character(.data$Subject),
+        Measurement = as.character(.data$Measurement)
       )
     # add a default, common timepoint if information not provided
     if(!('Timepoint' %in% colnames(training_objects))) {
@@ -143,15 +143,16 @@ parse_observations = function(
   
   # enumerate objects whose lengths should be estimated, if available
   prediction_objects = pixel_counts %>% 
-    select(Subject, Measurement, Timepoint) %>%
+    select(.data$Subject, .data$Measurement, .data$Timepoint) %>%
     unique() %>%
     mutate(
-      Subject = as.character(Subject),
-      Measurement = as.character(Measurement)
+      Subject = as.character(.data$Subject),
+      Measurement = as.character(.data$Measurement)
     )
   if(inherits(training_objects, 'data.frame'))
     prediction_objects = prediction_objects %>% 
-      setdiff(training_objects %>% select(Subject, Measurement, Timepoint))
+      setdiff(training_objects %>% 
+                select(.data$Subject, .data$Measurement, .data$Timepoint))
   if(nrow(prediction_objects) == 0)
     prediction_objects = NULL
   
@@ -176,26 +177,27 @@ parse_observations = function(
         by = 'Image'
       ) %>% 
       select(
-        Subject,
-        Measurement,
-        Timepoint,
-        Image,
-        PixelCount,
+        .data$Subject,
+        .data$Measurement,
+        .data$Timepoint,
+        .data$Image,
+        .data$PixelCount,
         Altitude = alt_conversion_col,
-        FocalLength,
-        ImageWidth,
-        SensorWidth
+        .data$FocalLength,
+        .data$ImageWidth,
+        .data$SensorWidth
       ) %>% 
       mutate(
-        GSD = Altitude * SensorWidth / FocalLength / ImageWidth,
-        PixelCount = PixelCount / GSD
+        GSD = .data$Altitude * .data$SensorWidth / .data$FocalLength / 
+          .data$ImageWidth,
+        PixelCount = .data$PixelCount / .data$GSD
       ) %>% 
       select(
-        Subject,
-        Measurement,
-        Timepoint,
-        Image,
-        PixelCount
+        .data$Subject,
+        .data$Measurement,
+        .data$Timepoint,
+        .data$Image,
+        .data$PixelCount
       ) %>% 
       unique()
   }

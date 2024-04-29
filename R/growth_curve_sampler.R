@@ -29,9 +29,9 @@ growth_curve_sampler = function(data, priors, subject_info) {
   
   # validate subject-group information
   ambiguous_subject_group_info = subject_info %>% 
-    group_by(Subject) %>% 
-    summarise(ngroups = length(unique(Group))) %>% 
-    filter(ngroups > 1)
+    group_by(.data$Subject) %>% 
+    summarise(ngroups = length(unique(.data$Group))) %>% 
+    filter(.data$ngroups > 1)
   if(nrow(ambiguous_subject_group_info) > 0) {
     stop('Subjects in argument "subject_info" must have one group definition')
   }
@@ -84,7 +84,7 @@ growth_curve_sampler = function(data, priors, subject_info) {
   ) %>% 
     left_join(
       y = subject_info %>% 
-        select(Subject, Group) %>% 
+        select(.data$Subject, .data$Group) %>% 
         unique(),
       by = 'Subject'
     ) %>% 
@@ -93,7 +93,7 @@ growth_curve_sampler = function(data, priors, subject_info) {
         mutate(group_ind = 1:n()),
       by = 'Group'
     ) %>% 
-    select(group_ind) %>% 
+    select(.data$group_ind) %>% 
     unlist() %>% 
     unname()
   
@@ -128,9 +128,9 @@ growth_curve_sampler = function(data, priors, subject_info) {
   ) %>% 
     left_join(
       y = subject_info %>% 
-        mutate(min_birth_year = Year - ObservedAge) %>% 
-        group_by(Subject) %>%
-        arrange(AgeType, min_birth_year) %>% 
+        mutate(min_birth_year = .data$Year - .data$ObservedAge) %>% 
+        group_by(.data$Subject) %>%
+        arrange(.data$AgeType, .data$min_birth_year) %>% 
         slice(1) %>% 
         ungroup(),
       by = 'Subject'
@@ -169,11 +169,11 @@ growth_curve_sampler = function(data, priors, subject_info) {
       object_ind = 1:n()
     ) %>% 
     left_join(
-      y = subject_info %>% mutate(Subject = as.character(Subject)),
+      y = subject_info %>% mutate(Subject = as.character(.data$Subject)),
       by = c('Subject', 'Timepoint' = 'Year')
     ) %>% 
     mutate(
-      is_calf = (ObservedAge == 0) & (AgeType == 'known age')
+      is_calf = (.data$ObservedAge == 0) & (.data$AgeType == 'known age')
     ) %>% 
     left_join(
       y = pkg$maps$growth_curve$age_type,
@@ -186,7 +186,7 @@ growth_curve_sampler = function(data, priors, subject_info) {
     )
   
   # process length measurements of non-calves
-  non_calf_objects = df %>% filter(is_calf == FALSE)
+  non_calf_objects = df %>% filter(.data$is_calf == FALSE)
   pkg$constants$n_non_calf_lengths = nrow(non_calf_objects)
   pkg$constants$non_calf_length_age_obs = non_calf_objects$ObservedAge
   pkg$constants$non_calf_length_age_type = non_calf_objects$AgeTypeValue
@@ -194,7 +194,7 @@ growth_curve_sampler = function(data, priors, subject_info) {
   pkg$constants$non_calf_length = non_calf_objects$object_ind
   
   # process length measurements of calves
-  calf_objects = df %>% filter(is_calf == TRUE)
+  calf_objects = df %>% filter(.data$is_calf == TRUE)
   pkg$constants$n_calf_lengths = nrow(calf_objects)
   pkg$constants$calf_length = calf_objects$object_ind
   pkg$constants$calf_length_subject = calf_objects$subject_ind

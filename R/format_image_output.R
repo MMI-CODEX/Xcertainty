@@ -6,6 +6,7 @@
 #'   posterior distributions
 #'   
 #' @importFrom coda mcmc HPDinterval effectiveSize
+#' @importFrom stats sd
 #' 
 format_image_output = function(pkg, samples, post_inds) {
   
