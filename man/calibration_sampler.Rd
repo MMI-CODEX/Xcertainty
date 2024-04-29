@@ -6,6 +6,9 @@
 \usage{
 calibration_sampler(data, priors)
 }
+\arguments{
+\item{data}{xxxxx}
+}
 \value{
 outputs a function to run a sampler, the function arguments are: 
 \describe{
@@ -17,6 +20,9 @@ outputs a function to run a sampler, the function arguments are:
 \description{
 Build an MCMC sampler that only uses calibration data to estimate measurement 
 error parameters
+}
+\details{
+Description text
 }
 \examples{
 sampler = calibration_sampler(

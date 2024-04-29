@@ -2,7 +2,11 @@
 #' 
 #' Build an MCMC sampler that only uses calibration data to estimate measurement 
 #' error parameters
+#' 
+#' Description text
 #'
+#' @param data xxxxx
+#' 
 #' @import nimble
 #'
 #' @example  examples/example_calibration_sampler.R
