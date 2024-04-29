@@ -11,6 +11,10 @@ template_model = nimble::nimbleCode({
       mean = prior_altimeter_bias[i, 1],
       sd = prior_altimeter_bias[i, 2]
     )
+    altimeter_scaling[i] ~ dnorm(
+      mean = prior_altimeter_scaling[i, 1],
+      sd = prior_altimeter_scaling[i, 2]
+    )
     altimeter_variance[i] ~ dinvgamma(
       shape = prior_altimeter_variance[i, 1],
       rate = prior_altimeter_variance[i, 2]
@@ -28,8 +32,9 @@ template_model = nimble::nimbleCode({
   # observation model for altimeter measurements
   for(i in 1:n_altimeter_measurements) {
     altimeter_measurement[i] ~ dnorm(
-      mean = image_altitude[altimeter_measurement_image[i]] + 
-        altimeter_bias[altimeter_measurement_type[i]],
+      mean = altimeter_bias[altimeter_measurement_type[i]] + 
+        image_altitude[altimeter_measurement_image[i]] *
+        altimeter_scaling[altimeter_measurement_type[i]],
       var = altimeter_variance[altimeter_measurement_type[i]]
     )
   }
