@@ -2,21 +2,20 @@
 #' 
 #' Build an MCMC sampler that uses calibration data to estimate independent,
 #' unknown measurements. This sampler is well suited for when individuals have 
-#' no replicate measurements across time points and have no age information.
+#' no replicate measurements across time points and have no age information.  It 
+#' can also be used to estimate lengths when there are replicate measurements.
+#' However, the model assumes all Subject/Measurement/Timepoint combinations are
+#' independent, so no strength will be borrowed across temporal replication of a 
+#' subject's measurements, for example.
 #' 
 #' @import nimble
 #' @importFrom stats runif
 #' 
-#' @example examples/independent_length_sampler.R
-#' 
-#' @return outputs a function to run a sampler, the function arguments are:
-#'  \describe{
-#'   \item{niter}{decription of what niter does}
-#'   \item{burn}{decription of what burn does...}
-#'  }
-#'
-#' @example examples/example_independent_length_sampler.R
-
+#' @param data Photogrammetric data formatted for Xcertainty models, required to
+#'   be an object with class \code{obs.parsed}, which can be obtained by running
+#'   \code{parse_observations()}
+#' @param priors \code{list} with components that define the model's prior 
+#'   distribution.  See \code{help(flatten_data)} for more details.
 #' 
 #' @return outputs a function to run a sampler, the function arguments are: 
 #' \describe{
@@ -25,7 +24,6 @@
 #'  \item{thin}{set the thinning rate}
 #'  }
 #'
-#
 #' @export
 #' 
 independent_length_sampler = function(data, priors) {

@@ -1,16 +1,17 @@
-#' Build an MCMC sampler for calibration data
+#' MCMC sampler for calibration data
 #' 
 #' Build an MCMC sampler that only uses calibration data to estimate measurement 
 #' error parameters
 #' 
-#' Description text
-#'
-#' @param data xxxxx
+#' @param data Photogrammetric data formatted for Xcertainty models, required to
+#'   be an object with class \code{obs.parsed}, which can be obtained by running
+#'   \code{parse_observations()}
+#' @param priors \code{list} with components that define the model's prior 
+#'   distribution.  See \code{help(flatten_data)} for more details.
 #' 
 #' @import nimble
 #'
 #' @example  examples/example_calibration_sampler.R
-#'
 #'
 #' @return outputs a function to run a sampler, the function arguments are: 
 #' \describe{
@@ -19,10 +20,14 @@
 #'  \item{thin}{set the thinning rate}
 #'  }
 #'
-#'
 #' @export
 #' 
 calibration_sampler = function(data, priors) {
+  
+  # validate input
+  if(!inherits(data, 'obs.parsed')) {
+    stop('Argument data is not output from parse_observations()')
+  }
   
   validate_training_objects(data$training_objects)
   

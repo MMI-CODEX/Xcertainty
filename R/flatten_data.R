@@ -4,6 +4,10 @@
 #' numerical methods.  This function is analagous to \code{stats::model.matrix},
 #' which generates design matrices for models that are specified via formulas.
 #' 
+#' @param data A \code{list} object, or similar that includes components 
+#'   that describe observations to analyze.  Components are automatically
+#'    extracted into this function's other arguments.  See the remaining 
+#'    documentation for details about required components.
 #' @param pixel_counts \code{data.frame} with columns \code{Subject}, 
 #'   \code{Measurement}, \code{Image}, and \code{PixelCount} that describe the 
 #'   length measurements taken from images
@@ -19,12 +23,14 @@
 #'   the Bayesian model.  The bias components may specify separate priors for
 #'   each UAS/altimeter type combination, or for all barometers at once based on
 #'   the information provided for joining.
+#' @param prediction_objects \code{data.frame} with elements \code{Subject}, 
+#'   \code{Measurement}, and \code{Timepoint} that describe the unknown lengths
+#'   of objects that should be estimated
 #' 
 #' @import dplyr
 #' @import tidyr
 #' @importFrom stats complete.cases
 #' 
-#' @noRd
 flatten_data = function(
   data = NULL, priors, pixel_counts = data$pixel_counts, 
   training_objects = data$training_objects, image_info = data$image_info,

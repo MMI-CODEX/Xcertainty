@@ -2,12 +2,17 @@
 % Please edit documentation in R/calibration_sampler.R
 \name{calibration_sampler}
 \alias{calibration_sampler}
-\title{Build an MCMC sampler for calibration data}
+\title{MCMC sampler for calibration data}
 \usage{
 calibration_sampler(data, priors)
 }
 \arguments{
-\item{data}{xxxxx}
+\item{data}{Photogrammetric data formatted for Xcertainty models, required to
+be an object with class \code{obs.parsed}, which can be obtained by running
+\code{parse_observations()}}
+
+\item{priors}{\code{list} with components that define the model's prior 
+distribution.  See \code{help(flatten_data)} for more details.}
 }
 \value{
 outputs a function to run a sampler, the function arguments are: 
@@ -20,9 +25,6 @@ outputs a function to run a sampler, the function arguments are:
 \description{
 Build an MCMC sampler that only uses calibration data to estimate measurement 
 error parameters
-}
-\details{
-Description text
 }
 \examples{
 sampler = calibration_sampler(

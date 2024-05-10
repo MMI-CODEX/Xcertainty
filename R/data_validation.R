@@ -8,6 +8,8 @@ handle_error = function(msg, action) {
 #' 
 #' @importFrom utils capture.output
 #' 
+#' @noRd
+#' 
 validate_pixel_counts = function(x, error = 'stop', verbose = TRUE) {
   
   if(!inherits(x, 'data.frame')) {
@@ -81,6 +83,8 @@ validate_pixel_counts = function(x, error = 'stop', verbose = TRUE) {
 #' 
 #' @importFrom utils capture.output
 #' 
+#' @noRd
+#' 
 validate_training_objects = function(x, error = 'stop', verbose = TRUE) {
   
   if(!inherits(x, 'data.frame')) {
@@ -137,6 +141,8 @@ validate_training_objects = function(x, error = 'stop', verbose = TRUE) {
 #' Validation checks for information about object lengths to estimate
 #' 
 #' @importFrom utils capture.output
+#' 
+#' @noRd
 #' 
 validate_prediction_objects = function(x, error = 'stop', verbose = TRUE) {
   

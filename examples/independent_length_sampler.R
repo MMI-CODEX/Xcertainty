@@ -359,7 +359,16 @@ curve(dnorm(x = x, mean = mean(errs), sd = sd(errs)), col = 2, add = TRUE)
 calibration %>% filter(uas == "P4S")
 
 
-plot(density(scale(res$images$`170626_P4S_S7_U4_NV_NT_vlc2.png`$samples, center = TRUE, scale = FALSE)))
+plot(
+  density(
+    scale(
+      x = res$images$`170626_P4S_S7_U4_NV_NT_vlc2.png`$samples, 
+      center = TRUE, 
+      scale = FALSE
+    )
+  )
+)
+
 lines(density(scale(errs,center = TRUE,scale = FALSE)),col=2)
 
 library(ggthemes)

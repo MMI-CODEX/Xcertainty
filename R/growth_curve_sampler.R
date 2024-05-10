@@ -1,15 +1,23 @@
 #' MCMC sampler for measurements of individuals with replicates and age information to generate growth curve
 #' 
-#' Build an MCMC sampler that uses calibration data to estimate independent,
-#' unknown measurements. This sampler is well suited for when individuals have 
-#' replicate measurements across time points and also have age information.
-#' This sampler uses these replicate samplers and age information to build 
-#' a von-Bertalanffy-Putter growth model, following Pirotta & Bierlich et al., (in revision)
+#' Build an MCMC sampler that uses calibration data to estimate the total 
+#' length of animals.  The total lengths are assumed to follow a growth curve
+#' model, so replicates across time points that include age information are 
+#' required to fit the model.  The length model is a von-Bertalanffy-Putter 
+#' growth model, following Pirotta & Bierlich et al., (in revision).
 #' 
 #' @import nimble
 #' 
 #' @example examples/example_growth_curve_sampler.R
 #' 
+#' @param data Photogrammetric data formatted for Xcertainty models, required to
+#'   be an object with class \code{obs.parsed}, which can be obtained by running
+#'   \code{parse_observations()}
+#' @param priors \code{list} with components that define the model's prior 
+#'   distribution.  See \code{help(flatten_data)} for more details.
+#' @param subject_info \code{data.frame} with elements \code{Year}, 
+#'   \code{Subject}, \code{Group}, \code{ObservedAge}, and \code{AgeType}.  See
+#'   \code{help(whale_info)} for descriptions of \code{data.frame} columns.
 #'
 #' @return outputs a function to run a sampler, the function arguments are: 
 #' \describe{
@@ -17,7 +25,6 @@
 #'  \item{burn}{set the number samples to discard}
 #'  \item{thin}{set the thinning rate}
 #'  }
-#'
 #'
 #' @export
 #' 

@@ -1,15 +1,22 @@
 #' MCMC sampler for measurements of individuals with replicates but no age information.
 #' 
-#' Build an MCMC sampler that uses calibration data to estimate independent,
-#' unknown measurements. This sampler is well suited for when individuals have 
-#' replicate measurements across time points but do not have age information.
+#' Build an MCMC sampler that uses calibration data to estimate measurements 
+#' that are assumed to be non-decreasing in time.  This sampler is well suited 
+#' for when individuals have replicate measurements across time points but do 
+#' not have age information.  The model estimates changes in unique combinations 
+#' of Subject/Measurement pairs over Timepoints.
 #' 
 #' @import nimble
 #' @importFrom stats runif
 #'
 #' @example examples/example_nondecreasing_length_sampler.R
 #' 
-#' 
+#' @param data Photogrammetric data formatted for Xcertainty models, required to
+#'   be an object with class \code{obs.parsed}, which can be obtained by running
+#'   \code{parse_observations()}
+#' @param priors \code{list} with components that define the model's prior 
+#'   distribution.  See \code{help(flatten_data)} for more details.
+#'   
 #' @return outputs a function to run a sampler, the function arguments are: 
 #' \describe{
 #'  \item{niter}{set the number of iterations}
@@ -17,7 +24,6 @@
 #'  \item{thin}{set the thinning rate}
 #'  }
 #'
-#' 
 #' @export
 #' 
 nondecreasing_length_sampler = function(data, priors) {
