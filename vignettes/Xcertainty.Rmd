@@ -18,50 +18,69 @@ knitr::opts_chunk$set(echo = TRUE)
 library(Xcertainty)
 ```
 
-TODOs: 
-* [] create documentation for 'calibration' (i.e., column info, GEMM Lab as owner, etc.)
-* [] create documentation for 'whales'
-* [] need checks
-  * convergence checks
-  * [] rhat checks
-  * [] autocorrelation checks
-* interpretation functions
-  * [] view summary results quickly and easily
-  * [] quick plots
-      - and you can use ggplot, but it might be helpful to have a function that saves lower and upper to use within ggplot, say geom_pointrage() or geom_ribbon() for growth curve.
+TODOs:   
+* [] create documentation for 'calibration' (i.e., column info, GEMM Lab as owner, etc.).   
+* [] create documentation for 'whales'.  
+* [] need checks.  
+  * convergence checks.  
+  * [] rhat checks.   
+  * [] autocorrelation checks.   
+* interpretation functions.   
+  * [] view summary results quickly and easily.  
+  * [] quick plots.   
+      - and you can use ggplot, but it might be helpful to have a function that saves lower and upper to use within ggplot, say geom_pointrage() or geom_ribbon() for growth curve.   
+* [] Need CX R function to calculated SA, BV, and BAI. 
+     - [] simulation to exlude widths?
 
 
+All morphological measurements derived using drone-based photogrammetry are susceptible to uncertainty. This uncertainty often varies by the drone system used. Thus, it is critical to incorporate photogrammetric uncertainty associated with measurements collected using different drones so that results are robust and comparable across studies.  
 
-All morphological measurements derived using drone-based photogrammetry are susceptible to uncertainty. This uncertainty often varies by the drone system used. Thus, it is critical to incorporate photogrammetric uncertainty associated with measurements collected using different drones so that results are robust and comparable across studies.
-
-The Xcertainty package makes this simple and easy by producing a predictive posterior distribution for each measurement. This posterior distribution can be summarized to describe the measurement and it associated uncertainty (i.e., median, standard deviation), as well as to make probabilistic statements, such as classifying maturity and identifying pregnant individuals. 
+The Xcertainty package makes this simple and easy by producing a predictive posterior distribution for each measurement. This posterior distribution can be summarized to describe the measurement (i.e., mean, median) and it associated uncertainty (i.e., standard deviation, credible intervals), as well as to make probabilistic statements, such as classifying maturity and identifying pregnant individuals.   
 
 Xcertainty is based off the Bayesian statistical model described in [Bierlich et al. (2021)](https://doi.org/10.3354/meps13814) where measurements of known-sized objects ('calibration objects') collected at various altitudes are used as training data to predict morphological measurements (such as body length) and associated uncertainty of unknown-sized objects (such as whales). 
 
 In this vignette, we'll cover how to setup your data, run Xcertainty, and interpret output results. 
 
 
+
 ## Main inputs
 
 Xcertainty has three main steps.  Each step has functions specific to the type of data:
 1. Prepare calibration and observation data:
-  * 'parse_observations()' parses wide-format data into a normalized list of data.frame objects. 
-2. Choose sampler based on data:
-  * 'calibration_sampler()' ---- []?
-  * 'independent_length_sampler()' data contains individuals with neither replicate samples nor age information. 
-  * 'nondecreasing_length_sampler()' data contains individuals with replicate samples but no age information. This sets rules so that length measurements of an individuals cannot shrink over time (from year to year). 
-  * 'growth_curve_sampler()' data contains individuals with replicate samples and age information. This fits a Von Bertalanffy-Putter growth curve to observations following *Pirotta & Bierlich et al., in revision*.
+  + 'parse_observations()': parses wide-format data into a normalized list of data.frame objects. 
+2. Choose sampler based on measurement data:   
+  + 'calibration_sampler()': estimate measurement error parameters for calibration data.   
+  + 'independent_length_sampler()': data contains individuals with neither replicate samples nor age information.   
+  + 'nondecreasing_length_sampler()': data contains individuals with replicate samples but no age information. This sampler sets a rule so that length measurements of an individuals cannot shrink over time (from year to year), i.e., individuals should not be getting shorter over time.     
+  + 'growth_curve_sampler()': data contains individuals with replicate samples and age information. This fits a Von Bertalanffy-Putter growth curve to observations following *Pirotta & Bierlich et al., in revision*.   
 3. Run! 
-  * 'sampler()' set the number of iterations using 'niter'
+  + 'sampler()': set the number of iterations using 'niter'
   
-  
-First let's start with calibration data.
+**^ it's more is based on the timpoint and if you want to run the mx independently or dependently; i.e., you want daily body condition because you want to monitor if it goes up or down. But TL should not decrease between years.**
 
 
-## Calibration data
 
-### Calibration Data
-We'll use a dataset consisting of measurements of a 1 m wooden board collected by five different drones at various altitudes (13-62 m). This dataset is documents in ?calibration. 
+# Examples
+We'll use two example datasets to run Xcertainty on
+1. whales --- Body length meausrements of individuals with replicates and with age information.
+2. XXX --- Body length and widths measurements of individuals with no replicates and no age information. (GWs, BWs? Mns?). We'll also show how to estimate body condition from these measurements.  
+
+Steps:   
+1. Prepare calibration data and observation (whale) data.   
+2. Build are sampler.   
+3. Run the sampler.   
+4. Check and confirm model outputs.  
+5. Explore outputs.    
+
+
+
+## Example 1. XXX measuremnets. 
+
+
+### Data
+
+#### Calibration data
+We'll use a calibration dataset consisting of measurements of a 1 m wooden board collected by five different drones at various altitudes (13-62 m). This dataset is documents in ?calibration. 
 ```{r}
 
 #devtools::build_vignettes()
@@ -72,8 +91,11 @@ table(calibration$uas)
 print(colnames(calibration))
 ```
 
+#### Whale data
+
 ### parse_observations()
-Use parse_observations() to set up the calibration data.
+We'll use parse_observations() to prepare the calibration and whale data. 
+Measurements are often recorded in a wide-format dataframe, so parse_observations() converts to long-format data.  
 ```{r}
 # parse calibration study
 calibration_data = parse_observations(
@@ -92,12 +114,94 @@ calibration_data = parse_observations(
 ```
 
 
-This creates a list of three dataframes.
-$pixel_counts
-$training_objects
-$image_info
+This creates a list of three dataframes:
+ + $pixel_counts.  
+ + $training_objects.  
+ + $image_info.  
 ```{r}
-head(calibration_data)
+head(calibration_data$pixel_counts)
+head(calibration_data$training_objects)
+head(calibration_data$image_info)
 ```
+
+Next, we'll use parese_observations() to prepare the whale data. 
+```{r}
+# parse field study
+whale_data = parse_observations(
+  x = whales, 
+  subject_col = 'whale_ID',
+  meas_col = 'TL.pix', 
+  image_col = 'Image', 
+  barometer_col = 'AltitudeBarometer',
+  laser_col = 'AltitudeLaser', 
+  flen_col = 'FocalLength', 
+  iwidth_col = 'ImageWidth', 
+  swidth_col = 'SensorWidth', 
+  uas_col = 'UAS',
+  timepoint_col = 'year'
+)
+```
+
+
+Now the calibration and whale data are both ready. Time to set up the sampler. 
+
+## The Sampler
+In this example, our data contains replicate measurements of indivudlas over time and estimates of age from Photo-ID history, either a 'known' or 'minimum' age if the individual was seen as a calf or not, respctively. 
+
+We will use the growth_curve_sampler() to create growth curves. We will build von Bertalanffy-Putter growth curves following Pirotta & Bierlich et al., (in revision). 
+
+Note that combine_observations() is used to combine the parsed calibration and whale data.  
+We also will set uninformative priors altitude, 
+
+```{r}
+sampler = growth_curve_sampler(
+  data = combine_observations(calibration_data, whale_data),
+  priors = list(
+    image_altitude = c(min = 0.1, max = 130),
+    altimeter_bias = rbind(
+      data.frame(altimeter = 'Barometer', mean = 0, sd = 1e2),
+      data.frame(altimeter = 'Laser', mean = 0, sd = 1e2)
+    ),
+    altimeter_variance = rbind(
+      data.frame(altimeter = 'Barometer', shape = .01, rate = .01),
+      data.frame(altimeter = 'Laser', shape = .01, rate = .01)
+    ),
+    pixel_variance = c(shape = .01, rate = .01),
+    # priors from Agbayani et al. 
+    zero_length_age = c(mean = -5.09, sd = 0.4),
+    growth_rate = c(mean = .18, sd = .01),
+    # additional priors
+    group_asymptotic_size = rbind(
+      Female = c(mean = 12, sd = .5),
+      Male = c(mean = 12, sd = .5)
+    ),
+    group_asymptotic_size_trend = rbind(
+      Female = c(mean = 0, sd = 1),
+      Male = c(mean = 0, sd = 1)
+    ),
+    subject_group_distribution = c(Female = .5, Male = .5),
+    asymptotic_size_sd = c(min = 0, max = 10),
+    min_calf_length = 3.5,
+    # To model break points between 1990 and 2015
+    year_minimum = 1940,
+    group_size_shift_start_year = c(min = 50, max = 75)
+  ),
+  subject_info = whale_info
+)
+```
+
+```{r}
+output = sampler(niter = 1e3)
+```
+
+
+
+# KCB: saving output to compare with other samplers in 'Output_play.Rmd'
+```{r}
+output_growth <- output
+```
+
+
+
 
 
