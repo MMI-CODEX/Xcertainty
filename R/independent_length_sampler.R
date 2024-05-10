@@ -5,6 +5,15 @@
 #' no replicate measurements across time points and have no age information.
 #' 
 #' @import nimble
+#' @importFrom stats runif
+#' 
+#' @example examples/independent_length_sampler.R
+#' 
+#' @return outputs a function to run a sampler, the function arguments are:
+#'  \describe{
+#'   \item{niter}{decription of what niter does}
+#'   \item{burn}{decription of what burn does...}
+#'  }
 #'
 #' @example examples/example_independent_length_sampler.R
 
@@ -46,7 +55,7 @@ independent_length_sampler = function(data, priors) {
       y = pkg$maps$objects %>% mutate(ind = 1:n()),
       by = c('Subject', 'Measurement', 'Timepoint')
     ) %>% 
-    select(ind) %>% 
+    select(.data$ind) %>% 
     unlist() %>% 
     as.numeric()
   

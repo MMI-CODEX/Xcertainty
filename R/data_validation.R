@@ -4,6 +4,10 @@ handle_error = function(msg, action) {
   if(action == 'stop') { stop(msg) }
 }
 
+#' Validation checks for pixel data
+#' 
+#' @importFrom utils capture.output
+#' 
 validate_pixel_counts = function(x, error = 'stop', verbose = TRUE) {
   
   if(!inherits(x, 'data.frame')) {
@@ -37,14 +41,23 @@ validate_pixel_counts = function(x, error = 'stop', verbose = TRUE) {
   }
   
   # only allow one PixelCount per observation
-  if(nrow(x) != nrow(x %>% select(Subject, Measurement, Timepoint, Image) %>% 
-                     unique())) {
+  if(nrow(x) != 
+     nrow(x %>% 
+          select(
+            .data$Subject, 
+            .data$Measurement, 
+            .data$Timepoint, 
+            .data$Image) %>% 
+          unique())
+     ) {
     
     # figure out where the multiple pixel counts occur
     err_details = x %>% 
-      group_by(Subject, Measurement, Timepoint, Image) %>% 
+      group_by(
+        .data$Subject, .data$Measurement, .data$Timepoint, .data$Image
+      ) %>% 
       summarise(NumPixelCounts = n(), .groups = 'keep') %>% 
-      filter(NumPixelCounts > 1)
+      filter(.data$NumPixelCounts > 1)
     
     # report error details
     if(verbose) {
@@ -64,6 +77,10 @@ validate_pixel_counts = function(x, error = 'stop', verbose = TRUE) {
   }
 }
 
+#' Validation checks for information about known object lengths
+#' 
+#' @importFrom utils capture.output
+#' 
 validate_training_objects = function(x, error = 'stop', verbose = TRUE) {
   
   if(!inherits(x, 'data.frame')) {
@@ -92,14 +109,17 @@ validate_training_objects = function(x, error = 'stop', verbose = TRUE) {
   }
   
   # only one true length for each training object
-  if(nrow(x) != nrow(x %>% select(Subject, Measurement, Timepoint) %>% 
-                     unique())) {
+  if(nrow(x) != 
+     nrow(x %>% 
+          select(.data$Subject, .data$Measurement, .data$Timepoint) %>% 
+          unique())
+     ) {
     
     # figure out where the multiple objects occur
     err_details = x %>% 
-      group_by(Subject, Measurement, Timepoint) %>% 
+      group_by(.data$Subject, .data$Measurement, .data$Timepoint) %>% 
       summarise(NumTrueLengths = n(), .groups = 'keep') %>% 
-      filter(NumTrueLengths > 1)
+      filter(.data$NumTrueLengths > 1)
     
     # report error details
     if(verbose) {
@@ -114,6 +134,10 @@ validate_training_objects = function(x, error = 'stop', verbose = TRUE) {
   }
 }
 
+#' Validation checks for information about object lengths to estimate
+#' 
+#' @importFrom utils capture.output
+#' 
 validate_prediction_objects = function(x, error = 'stop', verbose = TRUE) {
   
   if(!inherits(x, 'data.frame')) {
@@ -142,14 +166,17 @@ validate_prediction_objects = function(x, error = 'stop', verbose = TRUE) {
   }
   
   # only one entry for each training object
-  if(nrow(x) != nrow(x %>% select(Subject, Measurement, Timepoint) %>% 
-                     unique())) {
+  if(nrow(x) != 
+     nrow(x %>% 
+          select(.data$Subject, .data$Measurement, .data$Timepoint) %>% 
+          unique())
+    ) {
     
     # figure out where the multiple objects occur
     err_details = x %>% 
-      group_by(Subject, Measurement, Timepoint) %>% 
+      group_by(.data$Subject, .data$Measurement, .data$Timepoint) %>% 
       summarise(NumEntries = n(), .groups = 'keep') %>% 
-      filter(NumEntries > 1)
+      filter(.data$NumEntries > 1)
     
     # report error details
     if(verbose) {
@@ -197,13 +224,13 @@ validate_image_info = function(x, error = 'stop', verbose = TRUE) {
   }
   
   # only one set of attributes for each image
-  if(nrow(x) != nrow(x %>% select(Image) %>% unique())) {
+  if(nrow(x) != nrow(x %>% select(.data$Image) %>% unique())) {
     
     # figure out where the multiple objects occur
     err_details = x %>% 
-      group_by(Image) %>% 
+      group_by(.data$Image) %>% 
       summarise(NTimesDuplicated = n(), .groups = 'keep') %>% 
-      filter(NTimesDuplicated > 1)
+      filter(.data$NTimesDuplicated > 1)
     
     # report error details
     if(verbose) {
@@ -220,16 +247,16 @@ validate_image_info = function(x, error = 'stop', verbose = TRUE) {
   # need at least one altimeter measurement for each image
   altimeter_cols = intersect(colnames(x), c('Barometer', 'Laser'))
   missing_altitudes =x %>% 
-    select(Image, all_of(altimeter_cols)) %>%
+    select(.data$Image, all_of(altimeter_cols)) %>%
     pivot_longer(
       cols = altimeter_cols, 
       names_to = 'altimeter', 
       values_to = 'measurement'
     ) %>% 
-    group_by(Image) %>% 
-    summarise(nfinite = sum(is.finite(measurement))) %>% 
-    filter(nfinite == 0) %>% 
-    select(Image) %>% 
+    group_by(.data$Image) %>% 
+    summarise(nfinite = sum(is.finite(.data$measurement))) %>% 
+    filter(.data$nfinite == 0) %>% 
+    select(.data$Image) %>% 
     unlist() %>% 
     unname()
   if(length(missing_altitudes) > 0) {

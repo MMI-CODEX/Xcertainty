@@ -6,6 +6,7 @@
 #'   posterior distributions
 #'   
 #' @importFrom coda mcmc HPDinterval effectiveSize
+#' @importFrom stats sd
 #' 
 format_altimeter_output = function(pkg, samples, post_inds) {
   
@@ -25,7 +26,8 @@ format_altimeter_output = function(pkg, samples, post_inds) {
       tgt = gsub(
         pattern = 'X', 
         replacement = r['model_index'],
-        x = c('altimeter_bias[X]', 'altimeter_variance[X]')
+        x = c('altimeter_bias[X]', 'altimeter_variance[X]', 
+              'altimeter_scaling[X]')
       )
       
       # extract posterior samples
@@ -37,7 +39,7 @@ format_altimeter_output = function(pkg, samples, post_inds) {
       summary = data.frame(
         UAS = meta$UAS,
         altimeter = meta$altimeter,
-        parameter = c('bias', 'variance'),
+        parameter = c('bias', 'variance', 'scaling'),
         mean = colMeans(summary_samples),
         sd = apply(summary_samples, 2, sd),
         HPDinterval(m),

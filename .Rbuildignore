@@ -7,4 +7,6 @@
 .git/
 CODE_OF_CONDUCT.md
 cran-comments.md
-examples/
+^doc$
+^Meta$
+^examples

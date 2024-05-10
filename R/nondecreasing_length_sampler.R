@@ -5,6 +5,7 @@
 #' replicate measurements across time points but do not have age information.
 #' 
 #' @import nimble
+#' @importFrom stats runif
 #'
 #' @example examples/example_nondecreasing_length_sampler.R
 #' 
@@ -48,7 +49,7 @@ nondecreasing_length_sampler = function(data, priors) {
       y = pkg$maps$objects %>% mutate(ind = 1:n()),
       by = c('Subject', 'Measurement', 'Timepoint')
     ) %>% 
-    select(ind) %>% 
+    select(.data$ind) %>% 
     unlist() %>% 
     as.numeric()
   
@@ -61,11 +62,11 @@ nondecreasing_length_sampler = function(data, priors) {
   
   # identify objects to model with non-decreasing lengths over time
   temporal_targets = data$prediction_objects %>% 
-    group_by(Subject, Measurement) %>% 
+    group_by(.data$Subject, .data$Measurement) %>% 
     summarise(number_timepoints = n()) %>% 
     ungroup() %>%
-    filter(number_timepoints > 1) %>% 
-    select(Subject, Measurement)
+    filter(.data$number_timepoints > 1) %>% 
+    select(.data$Subject, .data$Measurement)
   
   # encode non-decreasing length constraints; re-initialize impacted objects
   if(nrow(temporal_targets) > 0) {
@@ -81,8 +82,8 @@ nondecreasing_length_sampler = function(data, priors) {
           y = pkg$maps$objects %>% mutate(ind = 1:n()),
           by = c('Subject', 'Measurement')
         ) %>% 
-        arrange(Timepoint) %>% 
-        select(ind) %>% 
+        arrange(.data$Timepoint) %>% 
+        select(.data$ind) %>% 
         unlist()  %>% 
         as.numeric()
       # organize into a constraint definition matrix

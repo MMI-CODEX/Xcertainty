@@ -8,6 +8,7 @@
 #'   model had lengths to be estimated
 #'   
 #' @importFrom coda mcmc HPDinterval effectiveSize
+#' @importFrom stats sd
 #' 
 format_object_output = function(pkg, samples, post_inds, prediction_objects) {
   

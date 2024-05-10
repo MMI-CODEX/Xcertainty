@@ -22,6 +22,7 @@
 #' 
 #' @import dplyr
 #' @import tidyr
+#' @importFrom stats complete.cases
 #' 
 #' @noRd
 flatten_data = function(
@@ -36,7 +37,7 @@ flatten_data = function(
   
   # validate prior distribution input exists
   for(component in c('altimeter_bias', 'altimeter_variance', 'image_altitude',
-                     'pixel_variance')) {
+                     'pixel_variance', 'altimeter_scaling')) {
     if(is.null(priors[[component]])) {
       stop(paste('Missing component from input: priors$', component, sep = ''))
     }
@@ -61,29 +62,31 @@ flatten_data = function(
   # TODO: Will this still return a data.frame if there is only one altimeter?
   # enumerate altimeter combinations we have data for
   altimeter_types = image_info %>% 
-    select(UAS, all_of(unique(priors$altimeter_bias$altimeter))) %>% 
+    select(.data$UAS, all_of(unique(priors$altimeter_bias$altimeter))) %>% 
     pivot_longer(
       cols = all_of(unique(priors$altimeter_bias$altimeter)), 
       names_to = 'altimeter', 
       values_to = 'measurement'
     ) %>% 
-    filter(is.finite(measurement)) %>% 
-    select(UAS, altimeter) %>% 
+    filter(is.finite(.data$measurement)) %>% 
+    select(.data$UAS, .data$altimeter) %>% 
     unique() %>% 
-    arrange(UAS, altimeter)
+    arrange(.data$UAS, .data$altimeter)
   
   # enumerate objects to analyze
   object_list = NULL
   if(!is.null(training_objects)) { 
     object_list = rbind(
       object_list, 
-      training_objects %>% select(Subject, Measurement, Timepoint)
+      training_objects %>% 
+        select(.data$Subject, .data$Measurement, .data$Timepoint)
     )
   }
   if(!is.null(prediction_objects)) {
     object_list = rbind(
       object_list, 
-      prediction_objects %>% select(Subject, Measurement, Timepoint)
+      prediction_objects %>% 
+        select(.data$Subject, .data$Measurement, .data$Timepoint)
     )
   }
   
@@ -107,6 +110,7 @@ flatten_data = function(
   pkg$maps$altimeters = altimeter_types
   pkg$constants$n_altimeters = nrow(pkg$maps$altimeters)
   pkg$inits$altimeter_bias = rep(0, pkg$constants$n_altimeters)
+  pkg$inits$altimeter_scaling = rep(1, pkg$constants$n_altimeters)
   pkg$inits$altimeter_variance = rep(1, pkg$constants$n_altimeters)
   
   # assemble prior bias distributions for all uas/altimeter type combinations
@@ -114,7 +118,15 @@ flatten_data = function(
     left_join(
       y = priors$altimeter_bias
     ) %>% 
-    select(mean, sd) %>% 
+    select(.data$mean, .data$sd) %>% 
+    as.matrix()
+  
+  # assemble prior scaling distributions for all uas/altimeter type combinations
+  pkg$constants$prior_altimeter_scaling = pkg$maps$altimeters %>% 
+    left_join(
+      y = priors$altimeter_scaling
+    ) %>% 
+    select(.data$mean, .data$sd) %>% 
     as.matrix()
   
   # assemble prior var. distributions for all uas/altimeter type combinations
@@ -122,7 +134,7 @@ flatten_data = function(
     left_join(
       y = priors$altimeter_variance
     ) %>% 
-    select(shape, rate) %>% 
+    select(.data$shape, .data$rate) %>% 
     as.matrix()
   
   pkg$maps$images = image_info$Image
@@ -138,14 +150,18 @@ flatten_data = function(
   
   # pivot altimeter readings to extract flattened data; ignore missing data
   altitude_measurements_longer = image_info %>% 
-    select(Image, UAS, all_of(unique(pkg$maps$altimeters$altimeter))) %>% 
+    select(
+      .data$Image, 
+      .data$UAS, 
+      all_of(unique(pkg$maps$altimeters$altimeter))
+    ) %>% 
     pivot_longer(
       cols = all_of(unique(pkg$maps$altimeters$altimeter)), 
       names_to = 'altimeter', 
       values_to = 'measurement'
     ) %>% 
     filter(
-      complete.cases(.)
+      complete.cases(all_vars())
     )
   
   pkg$constants$n_altimeter_measurements = nrow(altitude_measurements_longer)
@@ -156,7 +172,7 @@ flatten_data = function(
       y = data.frame(Image = pkg$maps$images) %>% mutate(ind = 1:n()),
       by = 'Image'
     ) %>% 
-    select(ind) %>% 
+    select(.data$ind) %>% 
     unlist() %>% 
     as.numeric()
   
@@ -164,7 +180,7 @@ flatten_data = function(
     left_join(
       y = pkg$maps$altimeters %>% mutate(ind = 1:n())
     ) %>%
-    select(ind) %>% 
+    select(.data$ind) %>% 
     unlist() %>% 
     as.numeric()
   
@@ -183,7 +199,7 @@ flatten_data = function(
         y = data$training_objects,
         by = c('Subject', 'Measurement', 'Timepoint')
       ) %>% 
-      select(Length) %>% 
+      select(.data$Length) %>% 
       unlist() %>% 
       as.numeric()
   }
@@ -193,7 +209,7 @@ flatten_data = function(
       y = pkg$maps$objects %>% mutate(ind = 1:n()),
       by = c('Subject', 'Measurement', 'Timepoint')
     ) %>% 
-    select(ind) %>% 
+    select(.data$ind) %>% 
     unlist() %>% 
     as.numeric()
   
@@ -206,7 +222,7 @@ flatten_data = function(
       y = data.frame(Image = pkg$maps$images) %>% mutate(ind = 1:n()),
       by = 'Image'
     ) %>% 
-    select(ind) %>% 
+    select(.data$ind) %>% 
     unlist() %>% 
     as.numeric()
   

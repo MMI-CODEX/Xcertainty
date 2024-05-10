@@ -22,7 +22,6 @@
 #'   \item{image_width}{The width of the image, in pixels}
 #'   \item{sensor_width}{The width of the camera sensor, in mm}
 #' }
-#' @source \url{TODO: fill in data citation}
 'calibration'
 
 #' Photogrammetric measurements of whales
@@ -48,7 +47,6 @@
 #'   \item{image_width}{The width of the image, in pixels}
 #'   \item{sensor_width}{The width of the camera sensor, in mm}
 #' }
-#' @source \url{TODO: fill in data citation}
 'whales'
 
 #' Metadata about whale observations
@@ -75,5 +73,4 @@
 #'   \item{image_width}{The width of the image, in pixels}
 #'   \item{sensor_width}{The width of the camera sensor, in mm}
 #' }
-#' @source \url{TODO: fill in data citation}
 'whale_info'
