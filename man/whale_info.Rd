@@ -5,26 +5,14 @@
 \alias{whale_info}
 \title{Metadata about whale observations}
 \format{
-A data frame with 76 rows and 8 variables:
+A data frame with 293 rows and 5 variables:
 \describe{
-  \item{whale_id}{Name of measured whale}
-  \item{image}{Name of image measurements are taken from}
-  \item{TL}{The whale's length in the image, in pixels}
-  \item{TL.XX.0..Width}{The whale's width in the image, in pixels.  The width 
-        is measured at XX% of the way toward the whale's head, from its 
-        tail.}
-  \item{barometer_altitude}{The altitude (in meters) at which the image was 
-        taken, according to the onboard barometer}
-  \item{laser_altitude}{The altitude (in meters) at which the image was 
-        taken, according to the attached laser altimeter}
-  \item{focal_length}{The focal length of the lens when the image was taken, 
-        in mm}
-  \item{image_width}{The width of the image, in pixels}
-  \item{sensor_width}{The width of the camera sensor, in mm}
+  \item{Year}{The year the observations were made}
+  \item{Subject}{Unique identifier for the whale}
+  \item{Group}{A categorical variable describing the whale's sex}
+  \item{ObservedAge}{The whale's age at time of observation}
+  \item{AgeType}{Additional details about the ObservedAge measurement}
 }
-}
-\source{
-\url{TODO: fill in data citation}
 }
 \usage{
 whale_info
@@ -32,8 +20,5 @@ whale_info
 \description{
 A dataset containing additional information about whales for which 
 measurements were taken
-}
-\details{
-TODO: update column descriptions
 }
 \keyword{datasets}

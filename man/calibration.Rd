@@ -5,25 +5,23 @@
 \alias{calibration}
 \title{Calibration data for photogrammetric measurement error model}
 \format{
-A data frame with 616 rows and 9 variables:
+A data frame with 657 rows and 10 variables:
 \describe{
-  \item{object_id}{Name of training object}
-  \item{image}{Name of image measurements are taken from}
-  \item{calibration_measurement}{The length of the object in the image, in 
-        pixels}
-  \item{true_length}{The known length of the object, in meters}
-  \item{barometer_altitude}{The altitude (in meters) at which the image was 
+  \item{CO.ID}{Training object name}
+  \item{Lpix}{Measured length of object in image (in pixels)}
+  \item{CO.L}{True length of calibration object (in meters)}
+  \item{image}{Name of image that measurements are taken from}
+  \item{Baro_Alt}{The altitude (in meters) at which the image was 
         taken, according to the onboard barometer}
-  \item{laser_altitude}{The altitude (in meters) at which the image was 
+  \item{Laser_Alt}{The altitude (in meters) at which the image was 
         taken, according to the attached laser altimeter}
-  \item{focal_length}{The focal length of the lens when the image was taken, 
+  \item{Focal_Length}{The focal length of the lens when the image was taken, 
         in mm}
-  \item{image_width}{The width of the image, in pixels}
-  \item{sensor_width}{The width of the camera sensor, in mm}
+  \item{Iw}{The width of the image, in pixels}
+  \item{Sw}{The width of the camera sensor, in mm}
+  \item{uas}{An identifier for the unoccupied aerial system (UAS) the image 
+        and measurements are from}
 }
-}
-\source{
-\url{TODO: fill in data citation}
 }
 \usage{
 calibration
@@ -32,8 +30,5 @@ calibration
 A dataset containing photogrammetric measurements of known-length objects, 
 used to estimate the characteristics of measurement errors attributed to the
 drone platform.
-}
-\details{
-TODO: update column descriptions
 }
 \keyword{datasets}
