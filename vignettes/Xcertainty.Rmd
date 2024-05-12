@@ -166,6 +166,10 @@ sampler = growth_curve_sampler(
       data.frame(altimeter = 'Barometer', shape = .01, rate = .01),
       data.frame(altimeter = 'Laser', shape = .01, rate = .01)
     ),
+    altimeter_scaling = rbind(
+      data.frame(altimeter = 'Barometer', mean = 0, sd = 1e1),
+      data.frame(altimeter = 'Laser', mean = 0, sd = 1e1)
+    ),
     pixel_variance = c(shape = .01, rate = .01),
     # priors from Agbayani et al. 
     zero_length_age = c(mean = -5.09, sd = 0.4),
