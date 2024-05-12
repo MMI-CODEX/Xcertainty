@@ -8,8 +8,14 @@
 #' independent, so no strength will be borrowed across temporal replication of a 
 #' subject's measurements, for example.
 #' 
-#' @import nimble
 #' @importFrom stats runif
+#' 
+#' @importFrom nimble nimbleModel
+#' @importFrom nimble compileNimble
+#' @importFrom nimble configureMCMC
+#' @importFrom nimble buildMCMC
+#' 
+#' @example examples/example_independent_length_sampler.R
 #' 
 #' @param data Photogrammetric data formatted for Xcertainty models, required to
 #'   be an object with class \code{obs.parsed}, which can be obtained by running
@@ -66,17 +72,6 @@ independent_length_sampler = function(data, priors) {
   #
   # build model
   #
-  
-  # TODO: extract the basic model building and compilation to a helper function
-  # since this is extremely common code across models... basically, a 
-  # "build_model" function that includes the initial pixel_count_expected info
-  #
-  # a strategy to do this would be to have a function that handles the details
-  # of the model fitting.  to specialize the function to each type of model, we 
-  # can ask 'users' to pass in a initialization function for the length priors,
-  # as well as additional information about what post-processing summaries to 
-  # run... this can be done as a string that will then run code for the selected
-  # options.
   
   mod = nimbleModel(
     code = template_model, constants = pkg$constants, data = pkg$data, 

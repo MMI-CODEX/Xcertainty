@@ -10,7 +10,9 @@ extract_summaries(model_output)
 \arguments{
 \item{model_output}{collection of MCMC output previously formatted using 
 functions such as \code{format_altimeter_output}, 
-\code{format_image_output}, etc.}
+\code{format_image_output}, etc.
+
+@noRd}
 }
 \description{
 Convenience function to combine summary objects from other formatting 

@@ -8,6 +8,8 @@
 #' @importFrom coda mcmc HPDinterval effectiveSize
 #' @importFrom stats sd
 #' 
+#' @noRd
+#' 
 format_growth_curve_output = function(pkg, samples, post_inds) {
   
   # extract samples for parameters

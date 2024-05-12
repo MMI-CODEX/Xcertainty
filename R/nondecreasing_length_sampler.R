@@ -6,8 +6,12 @@
 #' not have age information.  The model estimates changes in unique combinations 
 #' of Subject/Measurement pairs over Timepoints.
 #' 
-#' @import nimble
 #' @importFrom stats runif
+#' 
+#' @importFrom nimble nimbleModel
+#' @importFrom nimble compileNimble
+#' @importFrom nimble configureMCMC
+#' @importFrom nimble buildMCMC
 #'
 #' @example examples/example_nondecreasing_length_sampler.R
 #' 
@@ -48,8 +52,6 @@ nondecreasing_length_sampler = function(data, priors) {
     byrow = TRUE
   )
   
-  # TODO: continue to see if there is a way to reduce the amount of code 
-  # duplication
   pkg$constants$basic_object_ind = data$prediction_objects %>% 
     left_join(
       y = pkg$maps$objects %>% mutate(ind = 1:n()),
@@ -118,10 +120,6 @@ nondecreasing_length_sampler = function(data, priors) {
   #
   # build model
   #
-  
-  # TODO: extract the basic model building and compilation to a helper function
-  # since this is extremely common code across models... basically, a 
-  # "build_model" function that includes the initial pixel_count_expected info
   
   mod = nimbleModel(
     code = template_model, constants = pkg$constants, data = pkg$data, 

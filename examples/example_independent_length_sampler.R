@@ -46,11 +46,14 @@ sampler = independent_length_sampler(
       data.frame(altimeter = 'Barometer', shape = .01, rate = .01),
       data.frame(altimeter = 'Laser', shape = .01, rate = .01)
     ),
+    altimeter_scaling = rbind(
+      data.frame(altimeter = 'Barometer', mean = 1, sd = 1e1),
+      data.frame(altimeter = 'Laser', mean = 1, sd = 1e1)
+    ),
     pixel_variance = c(shape = .01, rate = .01),
-    # TODO: make this similar to altimeter_bias priors, in which we can set 
-    # separate priors for each object if we desired
     object_lengths = c(min = .01, max = 20)
   )
 )
 
-output = sampler = (niter = 1e4)
+# run sampler
+output = sampler(niter = 1e4)

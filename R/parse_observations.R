@@ -217,11 +217,6 @@ parse_observations = function(
   }
   
   validate_image_info(image_info)
- 
-  # TODO: extract the unique object combinations here too, so that people
-  # can get a better sense of how much data will be studied later.  for example,
-  # the model we're working toward could potentially allow an object to be 
-  # measured multiple times per timepoint, which could potentially be useful
   
   # package results
   res = list(

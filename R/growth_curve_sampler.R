@@ -6,9 +6,12 @@
 #' required to fit the model.  The length model is a von-Bertalanffy-Putter 
 #' growth model, following Pirotta & Bierlich et al., (in revision).
 #' 
-#' @import nimble
-#' 
 #' @example examples/example_growth_curve_sampler.R
+#' 
+#' @importFrom nimble nimbleModel
+#' @importFrom nimble compileNimble
+#' @importFrom nimble configureMCMC
+#' @importFrom nimble buildMCMC
 #' 
 #' @param data Photogrammetric data formatted for Xcertainty models, required to
 #'   be an object with class \code{obs.parsed}, which can be obtained by running

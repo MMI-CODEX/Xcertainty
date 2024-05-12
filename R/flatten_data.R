@@ -1,5 +1,7 @@
 #' Reformat photogrammetric data for model-based analysis
 #' 
+#' For internal use only.  Not intended to be called directly by users.
+#' 
 #' Assemble \code{data.frame} objects into a format that can be analyzed using 
 #' numerical methods.  This function is analagous to \code{stats::model.matrix},
 #' which generates design matrices for models that are specified via formulas.
@@ -27,9 +29,10 @@
 #'   \code{Measurement}, and \code{Timepoint} that describe the unknown lengths
 #'   of objects that should be estimated
 #' 
+#' @example examples/example_parse_observations.R
+#' 
 #' @import dplyr
 #' @import tidyr
-#' @importFrom stats complete.cases
 #' 
 flatten_data = function(
   data = NULL, priors, pixel_counts = data$pixel_counts, 
@@ -166,9 +169,7 @@ flatten_data = function(
       names_to = 'altimeter', 
       values_to = 'measurement'
     ) %>% 
-    filter(
-      complete.cases(all_vars())
-    )
+    drop_na()
   
   pkg$constants$n_altimeter_measurements = nrow(altitude_measurements_longer)
   pkg$data$altimeter_measurement = altitude_measurements_longer$measurement

@@ -69,6 +69,7 @@ whale_data = parse_observations(
   timepoint_col = 'year'
 )
 
+# build sampler
 sampler = growth_curve_sampler(
   data = combine_observations(calibration_data, whale_data),
   priors = list(
@@ -80,6 +81,10 @@ sampler = growth_curve_sampler(
     altimeter_variance = rbind(
       data.frame(altimeter = 'Barometer', shape = .01, rate = .01),
       data.frame(altimeter = 'Laser', shape = .01, rate = .01)
+    ),
+    altimeter_scaling = rbind(
+      data.frame(altimeter = 'Barometer', mean = 1, sd = 1e1),
+      data.frame(altimeter = 'Laser', mean = 1, sd = 1e1)
     ),
     pixel_variance = c(shape = .01, rate = .01),
     # priors from Agbayani et al. 
@@ -104,5 +109,6 @@ sampler = growth_curve_sampler(
   subject_info = whale_info
 )
 
+# run model
 output = sampler(niter = 1e4)
 }

@@ -9,9 +9,12 @@
 #' @param priors \code{list} with components that define the model's prior 
 #'   distribution.  See \code{help(flatten_data)} for more details.
 #' 
-#' @import nimble
-#'
 #' @example  examples/example_calibration_sampler.R
+#' 
+#' @importFrom nimble nimbleModel
+#' @importFrom nimble compileNimble
+#' @importFrom nimble configureMCMC
+#' @importFrom nimble buildMCMC
 #'
 #' @return outputs a function to run a sampler, the function arguments are: 
 #' \describe{
@@ -40,10 +43,6 @@ calibration_sampler = function(data, priors) {
   #
   # build model
   #
-  
-  # TODO: extract the basic model building and compilation to a helper function
-  # since this is extremely common code across models... basically, a 
-  # "build_model" function that includes the initial pixel_count_expected info
   
   mod = nimbleModel(
     code = template_model, constants = pkg$constants, data = pkg$data, 

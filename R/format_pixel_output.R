@@ -8,6 +8,8 @@
 #' @importFrom coda mcmc HPDinterval effectiveSize
 #' @importFrom stats sd
 #' 
+#' @noRd
+#' 
 format_pixel_output = function(pkg, samples, post_inds) {
   
   tgt = 'pixel_variance'

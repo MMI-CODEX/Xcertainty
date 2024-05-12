@@ -7,8 +7,8 @@ Author: Joshua Hewitt, K.C. Bierlich, Enrico Pirotta
 Maintainer: K.C. Bierlich <bierlick@oregonstate.edu>
 Description: Implementation of Bayesian models for estimating object lengths and morphological relationships between object lengths using photographic data collected from drones.  The Bayesian model is described in "Bayesian approach for predicting photogrammetric uncertainty in morphometric measurements derived from drones" (Bierlich et al., 2021, <doi:10.3354/meps13814>).
 License: MIT + file LICENSE
-Depends: R (>= 3.0.2)
-Imports: nimble, tidyr, dplyr, coda
+Depends: R (>= 3.0.2), nimble
+Imports: tidyr, dplyr, coda
 LinkingTo:
 Suggests: testthat, knitr, rmarkdown
 VignetteBuilder: knitr, rmarkdown

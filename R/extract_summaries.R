@@ -5,6 +5,8 @@
 #'   functions such as \code{format_altimeter_output}, 
 #'   \code{format_image_output}, etc.
 #'   
+#'   @noRd
+#'   
 extract_summaries = function(model_output) {
   lapply(model_output, function(component) {
     if('summary' %in% names(component)) {

@@ -10,6 +10,8 @@
 #' @importFrom coda mcmc HPDinterval effectiveSize
 #' @importFrom stats sd
 #' 
+#' @noRd
+#' 
 format_object_output = function(pkg, samples, post_inds, prediction_objects) {
   
   # parse model output

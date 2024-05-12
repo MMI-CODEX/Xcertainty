@@ -6,7 +6,6 @@ template_model = nimble::nimbleCode({
   
   # altimeter measurement error parameters
   for(i in 1:n_altimeters) {
-    # TODO: add hierarcical centering for altimeter class/type?
     altimeter_bias[i] ~ dnorm(
       mean = prior_altimeter_bias[i, 1],
       sd = prior_altimeter_bias[i, 2]

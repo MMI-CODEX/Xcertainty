@@ -8,6 +8,8 @@
 #' @importFrom coda mcmc HPDinterval effectiveSize
 #' @importFrom stats sd
 #' 
+#' @noRd
+#' 
 format_image_output = function(pkg, samples, post_inds) {
   
   # parse model output
