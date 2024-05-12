@@ -17,7 +17,7 @@ calibration_data = parse_observations(
 )
 
 # build sampler
-sampler = calibration_sampler(
+sampler_data = calibration_sampler(
   data = calibration_data,
   priors = list(
     image_altitude = c(min = 0.1, max = 130),
@@ -34,8 +34,7 @@ sampler = calibration_sampler(
       data.frame(altimeter = 'Laser', mean = 1, sd = 1e1)
     ),
     pixel_variance = c(shape = .01, rate = .01)
-  )
+  ),
+  # set to false to return sampler function
+  package_only = TRUE
 )
-
-# run sampler
-output = sampler(niter = 1e4)

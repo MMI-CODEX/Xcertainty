@@ -8,6 +8,8 @@
 #'   \code{parse_observations()}
 #' @param priors \code{list} with components that define the model's prior 
 #'   distribution.  See \code{help(flatten_data)} for more details.
+#' @param package_only \code{TRUE} to return the formatted data used to build 
+#'   the sampler, otherwise \code{FALSE} to return the sampler
 #' 
 #' @example  examples/example_calibration_sampler.R
 #' 
@@ -25,7 +27,7 @@
 #'
 #' @export
 #' 
-calibration_sampler = function(data, priors) {
+calibration_sampler = function(data, priors, package_only = FALSE) {
   
   # validate input
   if(!inherits(data, 'obs.parsed')) {
@@ -43,6 +45,9 @@ calibration_sampler = function(data, priors) {
   #
   # build model
   #
+  
+  # early return
+  if(package_only) return(pkg)
   
   mod = nimbleModel(
     code = template_model, constants = pkg$constants, data = pkg$data, 

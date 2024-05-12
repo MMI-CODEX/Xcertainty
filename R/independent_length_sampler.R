@@ -22,6 +22,8 @@
 #'   \code{parse_observations()}
 #' @param priors \code{list} with components that define the model's prior 
 #'   distribution.  See \code{help(flatten_data)} for more details.
+#' @param package_only \code{TRUE} to return the formatted data used to build 
+#'   the sampler, otherwise \code{FALSE} to return the sampler
 #' 
 #' @return outputs a function to run a sampler, the function arguments are: 
 #' \describe{
@@ -32,7 +34,7 @@
 #'
 #' @export
 #' 
-independent_length_sampler = function(data, priors) {
+independent_length_sampler = function(data, priors, package_only = FALSE) {
   
   validate_training_objects(data$training_objects)
   
@@ -72,6 +74,9 @@ independent_length_sampler = function(data, priors) {
   #
   # build model
   #
+  
+  # early return
+  if(package_only) return(pkg)
   
   mod = nimbleModel(
     code = template_model, constants = pkg$constants, data = pkg$data, 

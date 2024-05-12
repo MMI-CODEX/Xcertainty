@@ -34,7 +34,7 @@ whale_data = parse_observations(
 )
 
 # build sampler
-sampler = growth_curve_sampler(
+sampler_data = growth_curve_sampler(
   data = combine_observations(calibration_data, whale_data),
   priors = list(
     image_altitude = c(min = 0.1, max = 130),
@@ -70,8 +70,7 @@ sampler = growth_curve_sampler(
     year_minimum = 1940,
     group_size_shift_start_year = c(min = 50, max = 75)
   ),
-  subject_info = whale_info
+  subject_info = whale_info,
+  # set to false to return sampler function
+  package_only = TRUE
 )
-
-# run model
-output = sampler(niter = 1e4)

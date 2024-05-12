@@ -21,6 +21,8 @@
 #' @param subject_info \code{data.frame} with elements \code{Year}, 
 #'   \code{Subject}, \code{Group}, \code{ObservedAge}, and \code{AgeType}.  See
 #'   \code{help(whale_info)} for descriptions of \code{data.frame} columns.
+#' @param package_only \code{TRUE} to return the formatted data used to build 
+#'   the sampler, otherwise \code{FALSE} to return the sampler
 #'
 #' @return outputs a function to run a sampler, the function arguments are: 
 #' \describe{
@@ -31,7 +33,9 @@
 #'
 #' @export
 #' 
-growth_curve_sampler = function(data, priors, subject_info) {
+growth_curve_sampler = function(
+    data, priors, subject_info, package_only = FALSE
+) {
   
   validate_training_objects(data$training_objects)
   
@@ -217,6 +221,9 @@ growth_curve_sampler = function(data, priors, subject_info) {
   #
   # build model
   #
+  
+  # early return
+  if(package_only) return(pkg)
   
   mod = nimbleModel(
     code = template_model, constants = pkg$constants, data = pkg$data, 

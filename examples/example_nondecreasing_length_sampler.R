@@ -34,7 +34,7 @@ whale_data = parse_observations(
 )
 
 # build sampler
-sampler = nondecreasing_length_sampler(
+sampler_data = nondecreasing_length_sampler(
   data = combine_observations(calibration_data, whale_data),
   priors = list(
     image_altitude = c(min = 0.1, max = 130),
@@ -52,8 +52,7 @@ sampler = nondecreasing_length_sampler(
     ),
     pixel_variance = c(shape = .01, rate = .01),
     object_lengths = c(min = .01, max = 20)
-  )
+  ),
+  # set to false to return sampler function
+  package_only = TRUE
 )
-
-# run sampler
-output = sampler(niter = 1e4)

@@ -4,7 +4,7 @@
 \alias{calibration_sampler}
 \title{MCMC sampler for calibration data}
 \usage{
-calibration_sampler(data, priors)
+calibration_sampler(data, priors, package_only = FALSE)
 }
 \arguments{
 \item{data}{Photogrammetric data formatted for Xcertainty models, required to
@@ -13,6 +13,9 @@ be an object with class \code{obs.parsed}, which can be obtained by running
 
 \item{priors}{\code{list} with components that define the model's prior 
 distribution.  See \code{help(flatten_data)} for more details.}
+
+\item{package_only}{\code{TRUE} to return the formatted data used to build 
+the sampler, otherwise \code{FALSE} to return the sampler}
 }
 \value{
 outputs a function to run a sampler, the function arguments are: 
@@ -46,7 +49,7 @@ calibration_data = parse_observations(
 )
 
 # build sampler
-sampler = calibration_sampler(
+sampler_data = calibration_sampler(
   data = calibration_data,
   priors = list(
     image_altitude = c(min = 0.1, max = 130),
@@ -63,9 +66,8 @@ sampler = calibration_sampler(
       data.frame(altimeter = 'Laser', mean = 1, sd = 1e1)
     ),
     pixel_variance = c(shape = .01, rate = .01)
-  )
+  ),
+  # set to false to return sampler function
+  package_only = TRUE
 )
-
-# run sampler
-output = sampler(niter = 1e4)
 }
