@@ -10,7 +10,7 @@ License: MIT + file LICENSE
 Depends: R (>= 3.0.2), nimble
 Imports: tidyr, dplyr, coda
 LinkingTo:
-Suggests: testthat, knitr, rmarkdown
+Suggests: testthat, knitr, rmarkdown, stringr
 VignetteBuilder: knitr, rmarkdown
 LazyData: true
 Encoding: UTF-8
