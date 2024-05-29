@@ -19,7 +19,7 @@
 #'   be an object with class \code{obs.parsed}, which can be obtained by running
 #'   \code{parse_observations()}
 #' @param priors \code{list} with components that define the model's prior 
-#'   distribution.  See \code{help(flatten_data)} for more details.
+#'   distribution.  See \code{help("flatten_data")} for more details.
 #' @param package_only \code{TRUE} to return the formatted data used to build 
 #'   the sampler, otherwise \code{FALSE} to return the sampler
 #'   
