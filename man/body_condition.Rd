@@ -11,7 +11,8 @@ body_condition(
   width_names,
   width_increments,
   summary.burn = 0.5,
-  metric = c("surface_area", "body_area_index")
+  height_ratios = rep(1, length(width_names)),
+  metric = c("surface_area", "body_area_index", "standardized_widths")
 )
 }
 \arguments{
@@ -30,6 +31,14 @@ percentage along an animal's total length (i.e., \code{5} for "5\%", etc.)}
 
 \item{summary.burn}{proportion of posterior samples to discard before 
 computing posterior summary statistics}
+
+\item{height_ratios}{numeric vector used to compute \code{'body_volume'}
+metric. the \code{'body_volume'} metric assumes the animal's height at a 
+\code{width_increment} is the measured width (estimate) times the 
+corresponding entry in \code{height_ratios}.  By default, all 
+\code{height_ratios} are assumed to equal 1, which reflects a default 
+assumption that an animal's vertical cross sections are circular rather 
+than elliptical.}
 
 \item{metric}{Character vector of the body condition metrics to compute}
 }

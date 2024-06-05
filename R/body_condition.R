@@ -14,6 +14,13 @@
 #' @param metric Character vector of the body condition metrics to compute
 #' @param summary.burn proportion of posterior samples to discard before 
 #'   computing posterior summary statistics
+#' @param height_ratios numeric vector used to compute \code{'body_volume'}
+#'   metric. the \code{'body_volume'} metric assumes the animal's height at a 
+#'   \code{width_increment} is the measured width (estimate) times the 
+#'   corresponding entry in \code{height_ratios}.  By default, all 
+#'   \code{height_ratios} are assumed to equal 1, which reflects a default 
+#'   assumption that an animal's vertical cross sections are circular rather 
+#'   than elliptical.
 #' 
 #' @example examples/body_condition_example.R
 #' 
@@ -23,9 +30,16 @@
 #' 
 body_condition = function(
     data, output, length_name, width_names, width_increments, summary.burn = .5,
-    metric = c('surface_area', 'body_area_index')
+    height_ratios = rep(1, length(width_names)), 
+    metric = c('surface_area', 'body_area_index', #'body_volume', 
+               'standardized_widths')
 ) {
   
+  # add dependent measurements, as needed
+  if('body_area_index' %in% metric) {
+    metric = unique(c(metric, 'surface_area'))
+  }
+    
   if(all('body_area_index' %in% metric, length(width_names) < 3)) {
     stop('Need at least 3 width measurements to compute body_area_index')
   }
@@ -93,7 +107,7 @@ body_condition = function(
       res = list()
       
       # compute surface area samples
-      if(any(c('surface_area', 'body_area_index') %in% metric)) {
+      if('surface_area' %in% metric) {
         res$surface_area = list()
         nwidths = nrow(width_meta)
         res$surface_area$samples = total_length_samples * 
@@ -112,16 +126,45 @@ body_condition = function(
         )^2 * 100
       }
       
+      # standardize each width estimate relative to the total length estimate
+      if('standardized_widths' %in% metric) {
+        res$standardized_widths = lapply(seq_along(width_names), function(ind) {
+          list(
+            samples = width_samples[, ind] / total_length_samples
+          )
+        })
+        names(res$standardized_widths) = width_names
+      }
+      
+      if('body_volume' %in% metric) {
+        # TODO: compute body volumes using ellipsoidal frustrums based on ratios
+        # browser()
+      }
+      
       # compute posterior summaries
       for(m in names(res)) {
-        res[[m]]$summary = data.frame(
-          Subject = r['Subject'],
-          Timepoint = r['Timepoint'],
-          metric = m,
-          mean = mean(res[[m]]$samples[post_inds]),
-          sd = sd(res[[m]]$samples[post_inds]),
-          HPDinterval(mcmc(res[[m]]$samples[post_inds]))
-        )
+        if('samples' %in% names(res[[m]])) {
+          res[[m]]$summary = data.frame(
+            Subject = r['Subject'],
+            Timepoint = r['Timepoint'],
+            metric = m,
+            mean = mean(res[[m]]$samples[post_inds]),
+            sd = sd(res[[m]]$samples[post_inds]),
+            HPDinterval(mcmc(res[[m]]$samples[post_inds]))
+          )
+        } else {
+          for(s in names(res[[m]])) {
+            res[[m]][[s]]$summary = data.frame(
+              Subject = r['Subject'],
+              Timepoint = r['Timepoint'],
+              metric = paste(m, s),
+              mean = mean(res[[m]][[s]]$samples[post_inds]),
+              sd = sd(res[[m]][[s]]$samples[post_inds]),
+              HPDinterval(mcmc(res[[m]][[s]]$samples[post_inds]))
+            )
+          }
+        }
+        
       }
       
       res
