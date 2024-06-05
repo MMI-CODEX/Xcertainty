@@ -12,7 +12,7 @@ body_condition(
   width_increments,
   summary.burn = 0.5,
   height_ratios = rep(1, length(width_names)),
-  metric = c("surface_area", "body_area_index", "standardized_widths")
+  metric = c("surface_area", "body_area_index", "body_volume", "standardized_widths")
 )
 }
 \arguments{

@@ -31,9 +31,12 @@
 body_condition = function(
     data, output, length_name, width_names, width_increments, summary.burn = .5,
     height_ratios = rep(1, length(width_names)), 
-    metric = c('surface_area', 'body_area_index', #'body_volume', 
+    metric = c('surface_area', 'body_area_index', 'body_volume', 
                'standardized_widths')
 ) {
+  
+  # TODO: special cases for surface_area, body_volume when including tip, tail?
+  # TODO: make sure surface_area, body_volume implementations use all segments
   
   # add dependent measurements, as needed
   if('body_area_index' %in% metric) {
@@ -136,9 +139,20 @@ body_condition = function(
         names(res$standardized_widths) = width_names
       }
       
+      # compute body volume using ellipsoidal frustrums based on ratios
       if('body_volume' %in% metric) {
-        # TODO: compute body volumes using ellipsoidal frustrums based on ratios
-        # browser()
+        res$body_volume = list()
+        nwidths = nrow(width_meta)
+        dwp = diff(width_meta$increment_proportion)
+        dw = width_samples[, 2:nwidths] - width_samples[, 1:(nwidths-1)]
+        res$body_volume$samples = pi * total_length_samples * 
+          colSums( dwp * ( 
+              t(dw^2) * height_ratios[1:(nwidths-1)] / 3 + 
+              t(width_samples[, 1:(nwidths-1)]) * t(dw) * 
+                height_ratios[1:(nwidths-1)] + 
+              t(width_samples[, 1:(nwidths-1)]^2) * height_ratios[1:(nwidths-1)]
+            )
+          ) / 4
       }
       
       # compute posterior summaries
