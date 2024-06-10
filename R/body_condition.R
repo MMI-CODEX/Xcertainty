@@ -35,9 +35,6 @@ body_condition = function(
                'standardized_widths')
 ) {
   
-  # TODO: special cases for surface_area, body_volume when including tip, tail?
-  # TODO: make sure surface_area, body_volume implementations use all segments
-  
   # add dependent measurements, as needed
   if('body_area_index' %in% metric) {
     metric = unique(c(metric, 'surface_area'))
@@ -97,6 +94,13 @@ body_condition = function(
         }
       ))
       
+      # scale to height measurement samples
+      height_samples = sweep(
+        x = width_samples, 
+        MARGIN = 2,
+        STATS = height_ratios
+      )
+      
       #
       # compute metrics
       #
@@ -131,6 +135,7 @@ body_condition = function(
       
       # standardize each width estimate relative to the total length estimate
       if('standardized_widths' %in% metric) {
+        # use lapply vs sweep so that we can get the output *format* correct
         res$standardized_widths = lapply(seq_along(width_names), function(ind) {
           list(
             samples = width_samples[, ind] / total_length_samples
@@ -145,12 +150,14 @@ body_condition = function(
         nwidths = nrow(width_meta)
         dwp = diff(width_meta$increment_proportion)
         dw = width_samples[, 2:nwidths] - width_samples[, 1:(nwidths-1)]
+        dh = height_samples[, 2:nwidths] - height_samples[, 1:(nwidths-1)]
         res$body_volume$samples = pi * total_length_samples * 
-          colSums( dwp * ( 
-              t(dw^2) * height_ratios[1:(nwidths-1)] / 3 + 
-              t(width_samples[, 1:(nwidths-1)]) * t(dw) * 
-                height_ratios[1:(nwidths-1)] + 
-              t(width_samples[, 1:(nwidths-1)]^2) * height_ratios[1:(nwidths-1)]
+          colSums(
+            dwp * t(
+              dw * dh / 3 + 
+              (width_samples[, 1:(nwidths-1)] * dh + 
+               height_samples[, 1:(nwidths-1)] * dw) / 2 + 
+              width_samples[, 1:(nwidths-1)] * height_samples[, 1:(nwidths-1)]
             )
           ) / 4
       }
