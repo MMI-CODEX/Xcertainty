@@ -1,12 +1,16 @@
-#' MCMC sampler for measurements of individuals with no replicates or age information.
+#' MCMC sampler for individuals with independent measurements.
 #' 
 #' Build an MCMC sampler that uses calibration data to estimate independent,
-#' unknown measurements. This sampler is well suited for when individuals have 
-#' no replicate measurements across time points and have no age information.  It 
-#' can also be used to estimate lengths when there are replicate measurements.
-#' However, the model assumes all Subject/Measurement/Timepoint combinations are
-#' independent, so no strength will be borrowed across temporal replication of a 
-#' subject's measurements, for example.
+#' unknown measurements. This model assumes all Subject/Measurement/Timepoint 
+#' combinations are independent. So, this sample is well suited for data 
+#' containing individuals that either have no replicate samples or 
+#' have replicate samples that are independent over time, such as body condition 
+#' which can increase or decrease over time, as opposed to length which should 
+#' be stable or increase over time. It can also be used to estimate lengths 
+#' when there are replicate measurements. However, since the model assumes all 
+#' Subject/Measurement/Timepoint combinations are independent, no strength will 
+#' be borrowed across temporal replication of a subject's measurements, 
+#' for example.
 #' 
 #' @importFrom stats runif
 #' 

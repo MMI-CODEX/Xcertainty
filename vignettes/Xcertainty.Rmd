@@ -2,107 +2,99 @@
 title: "Introduction to Xcertainty"
 output: rmarkdown::html_vignette
 description: >
-  Start here to learn how to use Xcertainty. You'll learn how to include drone-based measurement data into the Bayesian statistical model to produce predective posterior distributions for each measurement.
+  Start here to learn how to use Xcertainty. You'll learn how to include drone-based measurement data into the Bayesian statistical model to produce predective posterior distributions that can be used to describe each measurement and its associated uncertainty.
 vignette: >
   %\VignetteIndexEntry{Introduction to Xcertainty}
   %\VignetteEngine{knitr::rmarkdown}
   \usepackage[utf8]{inputenc}
-date: "2024-03-27"
+date: "2024-06-24"
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r}
+```{r, echo=FALSE, warning=FALSE, message =FALSE}
 library(Xcertainty)
-```
 
-TODOs:   
-* [] create documentation for 'calibration' (i.e., column info, GEMM Lab as owner, etc.).   
-* [] create documentation for 'whales'.  
-* [] need checks.  
-  * convergence checks.  
-  * [] rhat checks.   
-  * [] autocorrelation checks.   
-* interpretation functions.   
-  * [] view summary results quickly and easily.  
-  * [] quick plots.   
-      - and you can use ggplot, but it might be helpful to have a function that saves lower and upper to use within ggplot, say geom_pointrage() or geom_ribbon() for growth curve.   
-* [] Need CX R function to calculated SA, BV, and BAI. 
-     - [] simulation to exlude widths?
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(ggplot2)
+
+#devtools::build_vignettes()
+```
 
 
 All morphological measurements derived using drone-based photogrammetry are susceptible to uncertainty. This uncertainty often varies by the drone system used. Thus, it is critical to incorporate photogrammetric uncertainty associated with measurements collected using different drones so that results are robust and comparable across studies.  
 
-The Xcertainty package makes this simple and easy by producing a predictive posterior distribution for each measurement. This posterior distribution can be summarized to describe the measurement (i.e., mean, median) and it associated uncertainty (i.e., standard deviation, credible intervals), as well as to make probabilistic statements, such as classifying maturity and identifying pregnant individuals.   
+The Xcertainty package makes this simple and easy by producing a predictive posterior distribution for each measurement. This posterior distribution can be summarized to describe the measurement (i.e., mean, median) and its associated uncertainty (i.e., standard deviation, credible intervals). The posterior distributions are also useful for making probabilistic statements, such as classifying maturity and diagnosing pregnancy, if the specified proportion of the posterior distribution for a measurement is is greater than a specified threshold (e.g., if 75% of posterior distribution for total body length is > 10 m, the individual is classified as mature).
 
-Xcertainty is based off the Bayesian statistical model described in [Bierlich et al. (2021)](https://doi.org/10.3354/meps13814) where measurements of known-sized objects ('calibration objects') collected at various altitudes are used as training data to predict morphological measurements (such as body length) and associated uncertainty of unknown-sized objects (such as whales). 
+Xcertainty is based off the Bayesian statistical model described in [Bierlich et al. (2021a)](https://doi.org/10.3354/meps13814) where measurements of known-sized objects ('calibration objects') collected at various altitudes are used as training data to predict morphological measurements (e.g., body length) and associated uncertainty of unknown-sized objects (e.g., whales). This modeling approach was later adapted to incorporate multiple measurements (body length and width) with associated uncertainty to estimate body condition [Bierlich et al. (2021b)](https://doi.org/10.3389/fmars.2021.749943), as well as combine body length with age information to construct growth curves [Bierlich et al., 2023](https://doi.org/10.1098/rsbl.2023.0043) and [Pirotta and Bierlich et al., 2024](https://doi.org/10.1111/gcb.17366).
 
-In this vignette, we'll cover how to setup your data, run Xcertainty, and interpret output results. 
+In this vignette, we'll cover how to setup your data, run Xcertainty, calculate body condition metrics, and interpret results.  
 
 
 
 ## Main inputs
 
-Xcertainty has three main steps.  Each step has functions specific to the type of data:
-1. Prepare calibration and observation data:
-  + 'parse_observations()': parses wide-format data into a normalized list of data.frame objects. 
-2. Choose sampler based on measurement data:   
-  + 'calibration_sampler()': estimate measurement error parameters for calibration data.   
-  + 'independent_length_sampler()': data contains individuals with neither replicate samples nor age information.   
-  + 'nondecreasing_length_sampler()': data contains individuals with replicate samples but no age information. This sampler sets a rule so that length measurements of an individuals cannot shrink over time (from year to year), i.e., individuals should not be getting shorter over time.     
-  + 'growth_curve_sampler()': data contains individuals with replicate samples and age information. This fits a Von Bertalanffy-Putter growth curve to observations following *Pirotta & Bierlich et al., in revision*.   
-3. Run! 
-  + 'sampler()': set the number of iterations using 'niter'
+Xcertainty follows these main steps.    
+
+1. Prepare calibration and observation data:  
+    + 'parse_observations()': parses wide-format data into a normalized list of data.frame objects. 
+
+2. Choose sampler:   
+    +  'calibration_sampler()': estimate measurement error parameters for calibration/training data.   
   
-**^ it's more is based on the timpoint and if you want to run the mx independently or dependently; i.e., you want daily body condition because you want to monitor if it goes up or down. But TL should not decrease between years.**
+    + 'independent_length_sampler()': this model assumes all Subject/Measurement/Timepoint combinations are independent. So this is well suited for data that contains individuals that either have no replicate samples or have replicate samples that are independent over time, such as body condition which can increase or decrease, as opposed to length which should be stable or increase over time.
+  
+    + 'nondecreasing_length_sampler()': data contains individuals with replicate samples for length over time but no age information. This sampler sets a rule so that length measurements of an individuals cannot shrink over time (from year to year), i.e., individuals should not be getting shorter over time. 
+  
+    + 'growth_curve_sampler()': data contains individuals with replicate samples and age information. This fits a Von Bertalanffy-Putter growth curve to observations following [Pirotta and Bierlich et al., 2024](https://doi.org/10.1111/gcb.17366).  
+  
+3. Run!  
+    + 'sampler()': set the number of iterations using 'niter'
+  
 
 
-
-# Examples
-We'll use two example datasets to run Xcertainty on
-1. whales --- Body length meausrements of individuals with replicates and with age information.
-2. XXX --- Body length and widths measurements of individuals with no replicates and no age information. (GWs, BWs? Mns?). We'll also show how to estimate body condition from these measurements.  
+# Example. Blue whale body length and body condition
+We will use a dataset of length and widths measurements to calculate several body 
+condition metrics (body area index, body volume, surface area, and 
+standardized widths) of blue whales collected off the coast of Monterey, California. 
 
 Steps:   
-1. Prepare calibration data and observation (whale) data.   
-2. Build are sampler.   
+1. Prepare calibration data and observation (whale) data.    
+2. Build sampler.   
 3. Run the sampler.   
-4. Check and confirm model outputs.  
-5. Explore outputs.    
+4. Calculate body condition metrics.   
+5. View outputs.    
 
 
 
-## Example 1. XXX measuremnets. 
+## Data
+For this example, we will use calibration objects and total body length and width measurements of blue whales from [Bierlich et al. (2021b)](https://doi.org/10.3389/fmars.2021.749943).
 
 
-### Data
+### Calibration Objects
+First we'll load and prepare the calibration data. Note that "CO" here stands for "Calibration Object" used for training data, and the "CO_Length" is the true length of the CO. Each calibration object has a specific CO.ID to link with certaint project. For the example, we will filter for the CO.ID associated with blue whales in 2018 ("CA_180906"). Note, that there are two different UAS listed used, LemHex and Alta. 
 
-#### Calibration data
-We'll use a calibration dataset consisting of measurements of a 1 m wooden board collected by five different drones at various altitudes (13-62 m). This dataset is documents in ?calibration. 
 ```{r}
+load(file.path('..', 'data', 'calibration_frontiers.rda'))
 
-#devtools::build_vignettes()
-load(file.path('..', 'data', 'calibration.rda'))
-#load(calibration)
-range(calibration$Baro_Alt)
-table(calibration$uas)
-print(colnames(calibration))
+# filter for the specific training data used for blue whales in 2018.
+calibration_bw <- calibration_frontiers %>% filter(CO_ID == "CA_180906")
+
+table(calibration_bw$uas)
 ```
 
-#### Whale data
 
-### parse_observations()
-We'll use parse_observations() to prepare the calibration and whale data. 
-Measurements are often recorded in a wide-format dataframe, so parse_observations() converts to long-format data.  
+Next, well format the data using parse_observations().
 ```{r}
-# parse calibration study
 calibration_data = parse_observations(
-  x = calibration, 
-  subject_col = 'CO.ID',
+  x = calibration_bw, 
+  subject_col = 'CO_ID',
   meas_col = 'Lpix', 
-  tlen_col = 'CO.L', 
+  tlen_col = 'CO_Length', 
   image_col = 'image', 
   barometer_col = 'Baro_Alt',
   laser_col = 'Laser_Alt', 
@@ -113,48 +105,60 @@ calibration_data = parse_observations(
 )
 ```
 
+* This creates a list of three dataframes:   
+    + calibration_data$pixel_counts.   
+    + calibration_data$training_objects.    
+    + calibration_data$image_info.    
+ 
 
-This creates a list of three dataframes:
- + $pixel_counts.  
- + $training_objects.  
- + $image_info.  
+#### Blue whale measurements
+Now we'll load and prepare the blue whale measurement data. Note that 'AID' is the unique individual. We will filter for blue whale measurements in 2018. Note, we will also use the Head-Tail Range of widths between 20-90% to calculate body condition, as this is region of the body with high lipid storage [Bierlich et al. (2021b)](https://doi.org/10.3389/fmars.2021.749943). We'll save the column names of the widths used in the Head-Tail range as their own object.  
 ```{r}
-head(calibration_data$pixel_counts)
-head(calibration_data$training_objects)
-head(calibration_data$image_info)
-```
+load(file.path('..', 'data', 'measurements_frontiers.rda'))
 
-Next, we'll use parese_observations() to prepare the whale data. 
-```{r}
-# parse field study
-whale_data = parse_observations(
-  x = whales, 
-  subject_col = 'whale_ID',
-  meas_col = 'TL.pix', 
-  image_col = 'Image', 
-  barometer_col = 'AltitudeBarometer',
-  laser_col = 'AltitudeLaser', 
-  flen_col = 'FocalLength', 
-  iwidth_col = 'ImageWidth', 
-  swidth_col = 'SensorWidth', 
-  uas_col = 'UAS',
-  timepoint_col = 'year'
+measurements_bw <- measurements_frontiers %>% filter(species == "Blue", year == 2018) %>% 
+  select(!c("TL_w05.00", "TL_w10.00", "TL_w15.00", "TL_w95.00"))
+
+# identify the width columns in the dataset
+width_names = grep(
+  pattern = 'TL_w\\_*', 
+  x = colnames(measurements_bw),
+  value = TRUE
 )
 ```
 
 
-Now the calibration and whale data are both ready. Time to set up the sampler. 
+Next, we'll use parse_observations() to prepare the whale data. We'll use a subset of 10 individuals. Note, that because measurements in this dataframe are in meters, we need to convert into pixels for Xcertainty. We can use alt_conversion_col to assign which altitude column should be used to "back calculate" to convert measurements from meters into pixels. Thus, it's recommended to store measurements in pixels, or both. 
 
-## The Sampler
-In this example, our data contains replicate measurements of indivudlas over time and estimates of age from Photo-ID history, either a 'known' or 'minimum' age if the individual was seen as a calf or not, respctively. 
-
-We will use the growth_curve_sampler() to create growth curves. We will build von Bertalanffy-Putter growth curves following Pirotta & Bierlich et al., (in revision). 
-
-Note that combine_observations() is used to combine the parsed calibration and whale data.  
-We also will set uninformative priors altitude, 
-
+Also, note that we assign measurement column for TL and widths between 20-90% that we saved as "width_names". 
 ```{r}
-sampler = growth_curve_sampler(
+# parse field study
+whale_data = parse_observations(
+  x = measurements_bw[1:10,], 
+  subject_col = 'AID',
+  meas_col = c('TL', width_names),
+  image_col = 'image', 
+  barometer_col = 'Baro_Alt',
+  laser_col = 'Laser_Alt', 
+  flen_col = 'Focal_Length', 
+  iwidth_col = 'Iw', 
+  swidth_col = 'Sw', 
+  uas_col = 'uas',
+  alt_conversion_col = 'altitude'
+)
+```
+
+  
+ * This creates a list of three dataframes:   
+    + whale_data$pixel_counts.   
+    + whale_data$training_objects.    
+    + whale_data$image_info.  
+
+
+### Build sampler
+Now we will build a sampler. We'll use the basic non-informative priors. And set the object length measurements to cover an overly wide range. 
+```{r}
+sampler = independent_length_sampler(
   data = combine_observations(calibration_data, whale_data),
   priors = list(
     image_altitude = c(min = 0.1, max = 130),
@@ -167,42 +171,174 @@ sampler = growth_curve_sampler(
       data.frame(altimeter = 'Laser', shape = .01, rate = .01)
     ),
     altimeter_scaling = rbind(
-      data.frame(altimeter = 'Barometer', mean = 0, sd = 1e1),
-      data.frame(altimeter = 'Laser', mean = 0, sd = 1e1)
+      data.frame(altimeter = 'Barometer', mean = 1, sd = 1e1),
+      data.frame(altimeter = 'Laser', mean = 1, sd = 1e1)
     ),
     pixel_variance = c(shape = .01, rate = .01),
-    # priors from Agbayani et al. 
-    zero_length_age = c(mean = -5.09, sd = 0.4),
-    growth_rate = c(mean = .18, sd = .01),
-    # additional priors
-    group_asymptotic_size = rbind(
-      Female = c(mean = 12, sd = .5),
-      Male = c(mean = 12, sd = .5)
-    ),
-    group_asymptotic_size_trend = rbind(
-      Female = c(mean = 0, sd = 1),
-      Male = c(mean = 0, sd = 1)
-    ),
-    subject_group_distribution = c(Female = .5, Male = .5),
-    asymptotic_size_sd = c(min = 0, max = 10),
-    min_calf_length = 3.5,
-    # To model break points between 1990 and 2015
-    year_minimum = 1940,
-    group_size_shift_start_year = c(min = 50, max = 75)
+    object_lengths = c(min = .01, max = 35)
   ),
-  subject_info = whale_info
+  # set to false to return sampler function
+  package_only = FALSE
 )
 ```
 
+
+Now we can run the sampler. Note, that "niter" refers to the number of iterations. When exploring data outputs, 1e4 or 1e5 can be good place for exploration, as this won't take too much time to run. We recommend using 1e6 when using for final analysis.
 ```{r}
-output = sampler(niter = 1e3)
+# run sampler
+output = sampler(niter = 1e6, thin = 10)
+```
+### Post processing
+Calculate body condition from the posterior samples. The \code{body_condition()} calculates several body condition metrics, including body area index (BAI) [Burnett et al., 2018](https://doi.org/10.1111/mms.12527); [Bierlich et al. (2021b)](https://doi.org/10.3389/fmars.2021.749943), body volume [Christiansen et al. 2021](https://doi.org/10.3354/meps13585), surface area [Christiansen et al., 2016](https://doi.org/10.1002/ecs2.1468), and standardized body widths from the specified widths provided. 
+
+```{r}
+# First, enumerate the width locations along the animal's length
+width_increments = as.numeric(
+  str_extract(
+    string = width_names, 
+    pattern = '[0-9]+'
+  )
+)
+
+# Compute body condition
+body_condition_output = body_condition(
+  data = whale_data, 
+  output = output,
+  length_name = 'TL',
+  width_names = width_names,
+  width_increments = width_increments,
+  summary.burn = .5
+)
 ```
 
 
 
-# KCB: saving output to compare with other samplers in 'Output_play.Rmd'
+### View Results 
+So now we have two main outputs saved, 1) *outputs*, which contains the posterior samples and summaries of all training data and length and width measurements from the sampler, and 2) *body_condition_output*, the calculated body condition metrics from the posterior samples.  
+
+
+#### Sampler Outputs
+We'll first take a look at posterior distributinos for the length and width measurements and training data in *outputs*. There are a many objects stored in *output*, so it is best to view specific selections rather than viewing all of the objects stored in outputs at once, as this can take a long time to load. 
+
+
+You can view the posterior summaries for all measurements of each whale.
 ```{r}
-output_growth <- output
+head(output$summaries$objects)
+```
+
+You can filter to view a specific measurement across all individuals, such as total body length or TL
+```{r}
+output$summaries$objects %>% filter(Measurement == "TL")
+```
+
+Or filter for all measurements from a specific individual
+```{r}
+output$summaries$objects %>% filter(Subject == "BW180830-52")
+```
+
+Plot total body length with associated uncertainty for each individual
+```{r, fig.dim = c(9, 7)}
+output$summaries$objects %>% filter(Measurement == "TL") %>% ggplot() + 
+  geom_pointrange(aes(x = Subject, y = mean, ymin =lower, ymax = upper)) + 
+  theme(axis.text.x = element_text(angle = 30, vjust = 1, hjust=1)) + 
+  ylab("Total body length (m)") + theme_bw()
+```
+
+
+You can also view and plot the posterior samples for an individual's measurement. Note, to exclude the first half of the posterior samples. 
+```{r, fig.dim = c(9, 7)}
+library(ggdist)
+
+data.frame(TL = output$objects$`BW180830-52 TL 1`$samples[5000:10000]) %>%
+  ggplot() + stat_halfeye(aes(TL)) + theme_bw() 
+```
+
+You can also view the summaries of the posterior distributions for each altimeter.
+```{r}
+output$summaries$altimeters
+```
+
+And the posterior distributions for each image's altitude in the training dataset.
+```{r}
+head(output$summaries$images)
+```
+
+As well as the pixel variance from the traiing data
+```{r}
+output$pixel_error$summary
+```
+
+
+
+#### Body Condition 
+There is a lot of objects stored in the body_condition_output, so it's best to view selected outputs rather than all objects at once, as it may take a long time to load.   
+
+You can view the body condition summaries (surface_area, body_area_index, body_volume, and standardized_widths) across individuals using \code{body_condition_output$summaries}. Summaries include mean, standard deviation (sd) and the lower and upper 95% highest posterior density intervals (HPDI). 
+
+View summary of BAI
+```{r}
+head(body_condition_output$summaries$body_area_index)
+```
+
+Plot BAI results 
+```{r, fig.dim = c(9, 7)}
+body_condition_output$summaries$body_area_index %>% ggplot() + 
+  geom_pointrange(aes(x = Subject, y = mean, ymin =lower, ymax = upper)) + 
+  theme(axis.text.x = element_text(angle = 30, vjust = 1, hjust=1)) + 
+  ylab("Body Area Index") + theme_bw()
+```
+
+View summary of Body Volume
+```{r}
+head(body_condition_output$summaries$body_volume)
+```
+
+Plot BAI results 
+```{r, fig.dim = c(9, 7)}
+body_condition_output$summaries$body_volume %>% ggplot() + 
+  geom_pointrange(aes(x = Subject, y = mean, ymin =lower, ymax = upper)) + 
+  theme(axis.text.x = element_text(angle = 30, vjust = 1, hjust=1)) + 
+  ylab("Body Volume (m^3)") + theme_bw()
+```
+
+
+View the standardized widths of an individual
+```{r}
+body_condition_output$summaries$standardized_widths %>% filter(Subject == "BW180830-52")
+```
+
+Plot standardized widths of an individual
+```{r, fig.dim = c(9, 7)}
+body_condition_output$summaries$standardized_widths$metric <- gsub("standardized_widths TL_", "", body_condition_output$summaries$standardized_widths$metric)
+
+body_condition_output$summaries$standardized_widths %>% filter(Subject == "BW180830-52") %>%
+  ggplot() + geom_pointrange(aes(x = metric, y = mean, ymin = lower, ymax = upper)) + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
+  xlab("width%") + ylab("standardized width") +ggtitle("BW180830-52") + theme_bw()
+```
+
+
+# View standardized widths across all individuals
+```{r, fig.dim = c(9, 7)}
+body_condition_output$summaries$standardized_widths %>% 
+  ggplot() + theme_bw() + 
+  geom_boxplot(aes(x = metric, y = mean)) + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
+  xlab("width%") + ylab("standardized width")
+```
+
+
+You can also view individual's posterior samples or summary for any of the body condition metrics.
+```{r}
+head(body_condition_output$body_area_index$`BW180830-52 1`$samples)
+```
+
+Plot the posterior distribution 
+```{r, fig.dim = c(9, 7)}
+library(ggdist)
+
+data.frame(BAI = body_condition_output$body_area_index$`BW180830-52 1`$samples[500:1000]) %>%
+  ggplot() + stat_halfeye(aes(BAI)) + theme_bw() 
 ```
 
 

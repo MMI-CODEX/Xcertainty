@@ -56,6 +56,10 @@ library(stringr)
 data("calibration2")
 data("body_condition_measurements")
 
+body_condition_measurements <- body_condition_measurements \%>\% select(!c(TL.10.0..Width, TL.15.0..Width,
+                                          TL.5.0..Width, TL.90.0..Width,
+                                          TL.95.0..Width))
+
 # parse calibration study
 calibration_data = parse_observations(
   x = calibration2, 
@@ -74,13 +78,13 @@ calibration_data = parse_observations(
 # identify the width columns in the dataset
 width_names = grep(
   pattern = 'TL\\\\..*', 
-  x = colnames(body_condition_measurements), 
+  x = colnames(body_condition_measurements),
   value = TRUE
 )
 
 # parse whale data
 whale_data = parse_observations(
-  x = body_condition_measurements[1:5,], 
+  x = body_condition_measurements, #[1:5,], 
   subject_col = 'Animal_ID', 
   meas_col = c('TL', width_names), 
   image_col = 'Image', 
@@ -90,7 +94,7 @@ whale_data = parse_observations(
   iwidth_col = 'Iw', 
   swidth_col = 'Sw', 
   uas_col = 'Aircraft', 
-  alt_conversion_col = 'LaserAlt'
+  alt_conversion_col = 'BaroAlt'
 )
 
 #
@@ -147,6 +151,10 @@ body_condition_output = body_condition(
   output = body_condition_measurement_estimates,
   length_name = 'TL',
   width_names = width_names,
-  width_increments = width_increments
+  width_increments = width_increments,
+  summary.burn = .5
 )
+
+
+body_condition_output$summaries
 }
