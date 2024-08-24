@@ -1,0 +1,192 @@
+---
+title: "Xcertainty Growth Curves"
+output: rmarkdown::html_vignette
+description: >
+  Here we provide an example of the Xcertainty growth_curve_sampler(). You'll learn how to use data containing individuals with replicate samples consisting of drone-based measurments and age information to fit a Von Bertalanffy-Putter growth curve in a Bayesian framework.
+vignette: >
+  %\VignetteIndexEntry{Introduction to Xcertainty}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+fontsize: 13pt 
+author: "KC Bierlich & Josh Hewitt, CODEX"
+date: "2024-08-23"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo=FALSE, warning=FALSE, message =FALSE}
+library(Xcertainty)
+
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(ggplot2)
+
+#devtools::build_vignettes()
+```
+
+## Introduction
+Before moving forward, be sure to first check out the `Xcertainty` vignette on how to use the `independent_length_sampler()` for a proper introduction on how to use `Xcertainty`. This vignette focuses on the `growth_curve_sampler()`, which uses data containing individuals with replicate body length measurements and age information over time. This model fits a Von Bertalanffy-Putter growth curve to observations and incorporates measurement uncertainty associated with multiple drones following [Pirotta and Bierlich et al., 2024](https://doi.org/10.1111/gcb.17366). 
+
+In this vignette, we'll use the `growth_curve_sampler()` to reproduce results derived from the data and methods described by [Pirotta and Bierlich et al., 2024](https://doi.org/10.1111/gcb.17366) 
+
+
+
+## Main inputs
+
+`Xcertainty` follows these main steps.      
+
+1. Prepare calibration and observation data:  
+    + `parse_observations()`: parses wide-format data into a normalized list of data frame objects. 
+
+&nbsp;
+
+2. Build sampler:   
+    + 2a. Calibration Objects
+      + `calibration_sampler()`: estimate measurement error parameters for calibration/training data.   
+    + 2b. Observation Data
+      + `growth_curve_sampler()`: data contains individuals with replicate samples and age information. This model fits a Von Bertalanffy-Putter growth curve to observations following [Pirotta and Bierlich et al., 2024](https://doi.org/10.1111/gcb.17366). 
+
+&nbsp;
+
+3. Run!  
+    + `sampler()`: set the number of iterations using 'niter'
+
+### Data
+We use calibration and obseration (whale length and age data) from [Pirotta and Bierlich et al., 2024](https://doi.org/10.1111/gcb.17366). 
+
+&nbsp;
+
+#### Calibration data
+We'll use a calibration dataset consisting of measurements of a 1 m wooden board collected by five different UAS at various altitudes (13-62 m). 
+```{r}
+load(file.path('..', 'data', 'calibration.rda'))
+
+# sample size for each UAS
+table(calibration$uas)
+
+```
+
+
+
+### parse_observations()
+We'll use parse_observations() to prepare the calibration and whale data. 
+Measurements are often recorded in a wide-format dataframe, so parse_observations() converts to long-format data.  
+```{r}
+# parse calibration study
+calibration_data = parse_observations(
+  x = calibration, 
+  subject_col = 'CO.ID',
+  meas_col = 'Lpix', 
+  tlen_col = 'CO.L', 
+  image_col = 'image', 
+  barometer_col = 'Baro_Alt',
+  laser_col = 'Laser_Alt', 
+  flen_col = 'Focal_Length', 
+  iwidth_col = 'Iw', 
+  swidth_col = 'Sw',
+  uas_col = 'uas'
+)
+```
+
+* This creates a list of three dataframes:   
+    + `calibration_data$pixel_counts`.   
+    + `calibration_data$training_objects`.    
+    + `calibration_data$image_info`.  
+
+
+Next, we'll use parese_observations() to prepare the whale data. Note, that the `timepoint_col` is set to year, since we are interested in the total body length of each individual summarized at the yearly scale. 
+```{r}
+# parse field study
+whale_data = parse_observations(
+  x = whales, 
+  subject_col = 'whale_ID',
+  meas_col = 'TL.pix', 
+  image_col = 'Image', 
+  barometer_col = 'AltitudeBarometer',
+  laser_col = 'AltitudeLaser', 
+  flen_col = 'FocalLength', 
+  iwidth_col = 'ImageWidth', 
+  swidth_col = 'SensorWidth', 
+  uas_col = 'UAS',
+  timepoint_col = 'year'
+)
+```
+
+
+&nbsp;
+
+Now the calibration and whale data are both ready. Time to set up the sampler. 
+
+&nbsp;
+
+## The sampler
+Note that `combine_observations()` is used to combine the parsed calibration and whale data together.  
+```{r, warning=FALSE}
+sampler = growth_curve_sampler(
+  data = combine_observations(calibration_data, whale_data),
+  priors = list(
+    image_altitude = c(min = 0.1, max = 130),
+    altimeter_bias = rbind(
+      data.frame(altimeter = 'Barometer', mean = 0, sd = 1e2),
+      data.frame(altimeter = 'Laser', mean = 0, sd = 1e2)
+    ),
+    altimeter_variance = rbind(
+      data.frame(altimeter = 'Barometer', shape = .01, rate = .01),
+      data.frame(altimeter = 'Laser', shape = .01, rate = .01)
+    ),
+    altimeter_scaling = rbind(
+      data.frame(altimeter = 'Barometer', mean = 0, sd = 1e1),
+      data.frame(altimeter = 'Laser', mean = 0, sd = 1e1)
+    ),
+    pixel_variance = c(shape = .01, rate = .01),
+    # priors from Agbayani et al. 
+    zero_length_age = c(mean = -5.09, sd = 0.4),
+    growth_rate = c(mean = .18, sd = .01),
+    # additional priors
+    group_asymptotic_size = rbind(
+      Female = c(mean = 12, sd = .5),
+      Male = c(mean = 12, sd = .5)
+    ),
+    group_asymptotic_size_trend = rbind(
+      Female = c(mean = 0, sd = 1),
+      Male = c(mean = 0, sd = 1)
+    ),
+    subject_group_distribution = c(Female = .5, Male = .5),
+    asymptotic_size_sd = c(min = 0, max = 10),
+    min_calf_length = 3.5,
+    # To model break points between 1990 and 2015
+    year_minimum = 1940,
+    group_size_shift_start_year = c(min = 50, max = 75)
+  ),
+  subject_info = whale_info
+)
+```
+
+```{r}
+output_growth = sampler(niter = 1e4)
+```
+
+## View Sampler Outputs 
+Our saved `output_growth` contains all the posterior samples and summaries from the sampler. Note, that there are many objects stored in `output_growth`, so it is best to view specific selections rather than viewing all of the objects stored in `output_growth` at once, as this can take a very long time to load and cause R to freeze. 
+
+&nbsp;
+
+You can view the posterior summaries (mean, sd, etc.) of total body length (TL) for each individual (Subject). Note that the `lower` and `upper` represent the 95% highest posterior density intervals (HPDI) of the posterior distribution for TL.
+```{r}
+head(output_growth$summaries$objects)
+```
+
+
+&nbsp;
+
+
+View the growth curve results, including k, t0, L_asymptotic, individual's birth year...
+```{r}
+output_growth$summaries$growth_curve[1:10,]
+```
+
+
+**^^birth year doesn't really make sense...?**

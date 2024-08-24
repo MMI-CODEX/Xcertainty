@@ -2,7 +2,7 @@
 % Please edit documentation in R/independent_length_sampler.R
 \name{independent_length_sampler}
 \alias{independent_length_sampler}
-\title{MCMC sampler for measurements of individuals with no replicates or age information.}
+\title{MCMC sampler for individuals with independent measurements.}
 \usage{
 independent_length_sampler(data, priors, package_only = FALSE)
 }
@@ -27,12 +27,16 @@ outputs a function to run a sampler, the function arguments are:
 }
 \description{
 Build an MCMC sampler that uses calibration data to estimate independent,
-unknown measurements. This sampler is well suited for when individuals have 
-no replicate measurements across time points and have no age information.  It 
-can also be used to estimate lengths when there are replicate measurements.
-However, the model assumes all Subject/Measurement/Timepoint combinations are
-independent, so no strength will be borrowed across temporal replication of a 
-subject's measurements, for example.
+unknown measurements. This model assumes all Subject/Measurement/Timepoint 
+combinations are independent. So, this sample is well suited for data 
+containing individuals that either have no replicate samples or 
+have replicate samples that are independent over time, such as body condition 
+which can increase or decrease over time, as opposed to length which should 
+be stable or increase over time. It can also be used to estimate lengths 
+when there are replicate measurements. However, since the model assumes all 
+Subject/Measurement/Timepoint combinations are independent, no strength will 
+be borrowed across temporal replication of a subject's measurements, 
+for example.
 }
 \examples{
 # load example wide-format data
