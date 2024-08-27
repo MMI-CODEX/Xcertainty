@@ -16,16 +16,6 @@ date: "2024-08-23"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r, echo=FALSE, warning=FALSE, message =FALSE}
-library(Xcertainty)
-
-library(dplyr)
-library(tidyr)
-library(stringr)
-library(ggplot2)
-
-#devtools::build_vignettes()
-```
 
 ## Introduction
 All morphological measurements derived using drone-based photogrammetry are susceptible to uncertainty. This uncertainty often varies by the drone system used. Thus, it is critical to incorporate photogrammetric uncertainty associated with measurements collected using different drones so that results are robust and comparable across studies and over long-term datasets.  
@@ -70,22 +60,49 @@ standardized widths) of gray whales collected off the coast of Newport, Oregon, 
 The P4Pro contains only a barometer for estimating altitude, while the I2 contains both a 
 barometer and a LiDAR altimeter (LidarBoX, [Bierlich et al., 2024](https://doi.org/10.1139/dsa-2023-0051).). It is best to run each sampler separately with its associated training data, so for this example we will use I2F. Whales were meausred using [MorphoMetriX v2](https://github.com/ZappyMan/MorphoMetriX-V2) and pre-processed using [CollatriX](https://github.com/cbirdferrer/collatrix).
 
-* Steps:     
-  + 1. Prepare calibration data and observation (whale) data.    
-  + 2. Build sampler.   
-  + 3. Run the sampler.   
-  + 4. Calculate body condition metrics.   
-  + 5. View outputs.    
+Steps:     
+  1. Prepare calibration data and observation (whale) data.    
+  2. Build sampler.   
+  3. Run the sampler.   
+  4. Calculate body condition metrics.   
+  5. View outputs.    
 
+
+&nbsp;
+
+We'll first load the Xcertainty package, as well as other packages we will use throughout the example.
+```{r, echo=TRUE, warning=FALSE, message = FALSE}
+library(Xcertainty)
+
+library(tidyverse)
+library(ggdist)
+```
 
 ### Calibration Objects
 First we'll load and prepare the calibration data, which is from [Bierlich et al., 2024](https://doi.org/10.1139/dsa-2023-0051).). Note that "CO" here stands for "Calibration Object" used for training data, and "CO.L" is the true length of the CO (1 m) and "Lpix" is the photogrammetric measurement in pixels. Each UAS has a unique CO.ID so that the training data and observation (whale) data can be linked. 
 ```{r}
 CO_data <- readRDS(file.path('..', 'data', "CO_data_ex1"))
 
-CO_data <- CO_data %>% filter(uas == "I2F")
+CO_data <- CO_data %>% filter(uas != "I2F")
 
 table(CO_data$uas)
+
+co_d <- CO_data %>% mutate(pd = Sw/Iw, 
+                   alt.true = (CO.L*Focal_Length)/(pd*Lpix),
+                   perDiff = ((Baro_Alt - alt.true)/alt.true)*100,
+                   )
+
+ggplot() + 
+  geom_point(data = co_d %>% filter(perDiff <10), aes(x = Baro_Alt, y = alt.true)) + 
+  geom_point(data = co_d %>% filter(perDiff >10), aes(x = Baro_Alt, y = alt.true), color = "red") + 
+  geom_abline(slope = 1, intercept= 0) + ggtitle("Training data: red = > 10% error")
+
+ggplot() + 
+  geom_histogram(data = co_d, aes(perDiff), alpha = 0.7) + 
+  xlab("% error")
+
+
+CO_data <- co_d %>% filter(perDiff <10) 
 ```
 
 
@@ -117,9 +134,10 @@ Now we'll load and prepare the gray whale measurement data. Note that 'whale_ID'
 ```{r}
 gw_data <- readRDS(file.path('..', 'data', "GW_data_ex1"))
 
-gw_measurements <- gw_data %>% filter(uas == "I2F") %>%
+gw_measurements <- gw_data %>% filter(uas != "I2F") %>% 
   select(!c("TL_w05.00_px", "TL_w10.00_px", "TL_w15.00_px", 
-            "TL_w75.00_px", "TL_w80.00_px", "TL_w85.00_px", "TL_w90.00_px", "TL_w95.00_px"))
+            "TL_w75.00_px", "TL_w80.00_px", "TL_w85.00_px", "TL_w90.00_px", "TL_w95.00_px")) %>%
+  mutate(TL = TL_px * Baro_Alt/Focal_Length * Sw/Iw)
 
 # identify the width columns in the dataset
 width_names = grep(
@@ -132,7 +150,7 @@ width_names = grep(
 
 Next, we'll use `parse_observations()` to prepare the whale data. Since `Xcertainty` incorporates errors associated with both a LiDAR altimeter and a barometer into the output measurement, the input measurements must be in pixels. In our example dataset of gray whales, measurements are already in pixels. If measurements in a dataframe are in meters, they can easily be converted into pixels using `alt_conversion_col` to assign which altitude column should be used to "back calculate" measurements in meters into pixels. For example, use `alt_conversion_col = 'Laser_Alt` if the measurements used a LiDAR altimeter to convert measurements into meters. 
 
-& nbsp;
+&nbsp;
 
 Also, note that we assign measurement column for TL and widths between 20-70% that we saved as "width_names". 
 ```{r}
@@ -180,15 +198,13 @@ sampler = independent_length_sampler(
     ),
     pixel_variance = c(shape = .01, rate = .01),
     object_lengths = c(min = .01, max = 20)
-  ),
-  # set to false to return sampler function
-  package_only = FALSE
+  )
 )
 ```
 
 
 ## Run Sampler
-Now we can run the sampler. Note, that "niter" refers to the number of iterations. When exploring data outputs, 1e4 or 1e5 can be good place for exploration, as this won't take too much time to run. We recommend using 1e6 for the final analysis.
+Now we can run the sampler. Note, that "niter" refers to the number of iterations. When exploring data outputs, 1e4 or 1e5 can be good place for exploration, as this won't take too much time to run. We recommend using 1e6 for the final analysis since 1e6 MCMC samples is often enough to get a reasonable posterior effective sample size. 
 ```{r}
 # run sampler
 output = sampler(niter = 1e6, thin = 10)
@@ -228,8 +244,6 @@ output$summaries$objects %>% filter(Measurement == "TL_px") %>%
 
 You can also view and plot the posterior samples for an individual's measurement. Note, be sure to exclude the first half of the posterior samples, i.e., if 10000 samples, exclude the first 5000. To demonstrate this below, we'll first save the samples for an individual as an object, then plot the distribution with the first half of the samples excluded. 
 ```{r, fig.dim = c(6, 6)}
-library(ggdist)
-
 ID_samples <- output$objects$`GW_01 TL_px 1`$samples
 
 data.frame(TL = ID_samples[(length(ID_samples)/2):length((ID_samples))]) %>%
@@ -243,7 +257,11 @@ output$summaries$altimeters
 
 And the posterior distributions for each image's altitude in the training dataset.
 ```{r}
-head(output$summaries$images)
+head(output$summaries$images) %>% left_join(CO_data %>% rename(Image = image), by = "Image") %>%
+  ggplot() + geom_pointrange(aes(x = Baro_Alt, y = mean, ymin =lower, ymax = upper)) + 
+  geom_abline(slope = 1, intercept = 0, lty = 2) + ylab("posterior altitude") 
+ggsave(file.path("..", "..", "Xcertainty_progress", "P4P/posterior_alt_vs_obs_alt.png"))
+
 ```
 
 As well as the pixel variance from the training data
@@ -367,10 +385,8 @@ head(body_condition_output$body_area_index$`GW_01`$samples)
 
 And from these posterior samples for an individual, we can plot the distribution. Here we'll plot BAI as an example, and include the 95% HPDI. Remember to exclude the first half of the samples, as mentioned above. 
 ```{r, fig.dim = c(6, 6)}
-library(ggdist)
-
-ID_samples <- output$objects$`GW_01 TL_px 1`$samples
-
+ID_samples <- body_condition_output$body_area_index$`GW_01 1`$samples
+  
 data.frame(BAI = ID_samples[(length(ID_samples)/2):length((ID_samples))]) %>%
   ggplot() + stat_halfeye(aes(BAI), .width = 0.95) + theme_bw() + ggtitle("GW_01")
 ```
