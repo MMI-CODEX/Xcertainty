@@ -129,8 +129,6 @@ growth_curve_sampler = function(
     replace = TRUE
   )
   
-  pkg$constants$year_minimum = priors$year_minimum
-  
   pkg$maps$growth_curve$age_type = data.frame(
     AgeType = c('known age', 'min age'),
     AgeTypeValue = c(0, 1)

@@ -133,8 +133,7 @@ template_model = nimble::nimbleCode({
       subject_age_offset[i] ~ T(dt(0, 1, 1), 0, 40) 
       subject_birth_year[i] <- 
         subject_birth_year_minimum[i] - 
-        subject_age_type[i] * subject_age_offset[i] - 
-        year_minimum
+        subject_age_type[i] * subject_age_offset[i]
     }
     
     # individual variation around average asymptotic sizes

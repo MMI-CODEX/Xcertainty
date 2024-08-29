@@ -84,8 +84,7 @@ sampler = growth_curve_sampler(
     asymptotic_size_sd = c(min = 0, max = 10),
     min_calf_length = 3.5,
     # To model break points between 1990 and 2015
-    year_minimum = 1940,
-    group_size_shift_start_year = c(min = 50, max = 75)
+    group_size_shift_start_year = c(min = 1990, max = 2015)
   ),
   subject_info = whale_info
 )
