@@ -188,4 +188,4 @@ output_growth$summaries$growth_curve[1:10,]
 ```
 
 
-**^^birth year doesn't really make sense...?**
+
