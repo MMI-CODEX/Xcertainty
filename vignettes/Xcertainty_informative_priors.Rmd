@@ -20,14 +20,12 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Introduction
 Before moving forward, be sure to first check out the [Xcertainty](Xcertainty.html) vignette on how to use the `independent_length_sampler()` with non-informative priors for a proper introduction on how to use `Xcertainty`. 
 
-For this vignette, we'll focus on how to use informative priors using the `independent_length_sampler()`. In most cases, it'll be best to use non-informative priors to build the sampler. In some cases, assigning informative priors can be helpful, especially with lower cost off-the-shelf drones that are more susceptible to high errors. 
-
-We will first show an example using non-informative priors and how to identify faulty posterior outputs. We'll then show some steps for trouble shooting and when informative priors may be appropriate to use. We'll then build a sampler using informative priors and view the outputs. 
+You should always first start with using non-informative priors. In some cases, assigning informative priors can be helpful, especially with low-cost off-the-shelf drones that are more susceptible to high errors and when the model is overparameterized. For this vignette, we'll focus on how to use informative priors using the `independent_length_sampler()`. We will first show an example using non-informative priors and how to identify faulty posterior outputs. We'll then show some steps for trouble shooting and when informative priors may be appropriate to use. We'll then build a sampler using informative priors and view the outputs. 
 
 &nbsp;
 
 
-## Example: Gray whale body length and body condition
+## Example: Gray whale body length
 We will use the same small example dataset consisting of body length and body width measurements of Pacific Coast Feeding Group (PCFG) gray whales from the [Xcertainty](Xcertainty.html) vignette. This time, we will use measurement data collected with a DJI Phantom 4 Pro (P4P, n = 5 individuals). The P4P contains only a barometer (no LiDAR altimeter) for estimating altitude, which are prone to greater errors and can often generate outliers. 
 
 Note, that wide-angle lenses, such as the 8.8 mm focal length lens on the P4P, are susceptible to barrel distortion. Many manufacturers use internal processing to automatically correct for the effects of barrel distortion. We lab tested the field of view (FOV) for the P4P following Segre (in prep) and calculated an adjusted focal length that matches the corrections from the internal processing. We thus will use this adjusted focal length (`Focal_Length_adj`) in the sampler. 
@@ -45,10 +43,12 @@ library(tidyverse)
 library(ggdist)
 ```
 
+
 ### Calibration Objects
 First we'll load and prepare the calibration data, which is from [Bierlich et al., 2024](https://doi.org/10.1139/dsa-2023-0051). Note that "CO" here stands for "Calibration Object" used for training data, and "CO.L" is the true length of the CO (1 m) and "Lpix" is the photogrammetric measurement of the CO in pixels. Each UAS has a unique CO.ID so that the training data and observation (whale) data can be linked. We will filter to use CO data from the P4P drone.
 ```{r}
-load(file.path('..', 'data', "CO_data_ex1.rda"))
+# load calibration measurement data
+data("co_data")
 
 # sample size for both drones
 table(co_data$uas)
@@ -88,7 +88,8 @@ As in the [Xcertainty](Xcertainty.html) vignette, we will select body widths bet
 
 For this example, we will only use whale measurements collected using the P4P drone.
 ```{r}
-load(file.path('..', 'data', "GW_data_ex1.rda"))
+# load gray whale measurement data
+data("gw_data")
 
 # filter for I2 drone and select specific widths to include for estimating body condition (20-70%)
 gw_measurements <- gw_data %>% filter(uas == "P4P") %>% 
@@ -309,13 +310,15 @@ sampler = independent_length_sampler(
   priors = list(
     image_altitude = c(min = 0.1, max = 130),
     altimeter_bias = rbind(
-      data.frame(altimeter = 'Barometer', mean = 0, sd = 1e-2)
+      #data.frame(altimeter = 'Barometer', mean = 0, sd = 1e-2)
+      data.frame(altimeter = 'Barometer', mean = 0, sd = 1)
     ),
     altimeter_variance = rbind(
       data.frame(altimeter = 'Barometer', shape = .01, rate = .01)
     ),
     altimeter_scaling = rbind(
-      data.frame(altimeter = 'Barometer', mean = 1, sd = 1e-2)
+      #data.frame(altimeter = 'Barometer', mean = 1, sd = 1e-2)
+      data.frame(altimeter = 'Barometer', mean = 1, sd = 0.1)
     ),
     pixel_variance = c(shape = .01, rate = .01),
     object_lengths = c(min = .01, max = 20)
@@ -323,6 +326,7 @@ sampler = independent_length_sampler(
   # set to false to return sampler function
   package_only = FALSE
 )
+
 ```
 
 

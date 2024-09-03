@@ -81,7 +81,8 @@ library(ggdist)
 ### Calibration Objects
 First we'll load and prepare the calibration data, which is from [Bierlich et al., 2024](https://doi.org/10.1139/dsa-2023-0051). Note that "CO" here stands for "Calibration Object" used for training data, and "CO.L" is the true length of the CO (1 m) and "Lpix" is the photogrammetric measurement of the CO in pixels. Each UAS has a unique CO.ID so that the training data and observation (whale) data can be linked. We will filter to use CO data from the I2 drone.
 ```{r}
-load(file.path('..', 'data', "CO_data_ex1.rda"))
+# load calibration measurement data
+data("co_data")
 
 # sample size for both drones
 table(co_data$uas)
@@ -121,7 +122,8 @@ To estimate body condition for these gray whales, we will use body widths betwee
 
 For this example, we will only use whale measurements collected using the I2 drone. See the vignette titled "Xcertainty_informative_prios" for an example using P4P data. Note, that Xcertainty can also incorporate measurements with missing LiDAR data (NAs).
 ```{r}
-load(file.path('..', 'data', "GW_data_ex1.rda"))
+# load gray whale measurement data
+data("gw_data")
 
 # quick look at the data
 head(gw_data)
@@ -143,8 +145,11 @@ width_names = grep(
 )
 ```
 
+&nbsp;
 
-Next, we'll use `parse_observations()` to prepare the whale data. Since `Xcertainty` incorporates errors associated with both a LiDAR altimeter and a barometer into the output measurement, the input measurements must be in pixels. In our example dataset of gray whales, measurements are already in pixels. If measurements in a dataframe are in meters, they can easily be converted into pixels using `alt_conversion_col` to assign which altitude column should be used to "back calculate" measurements in meters into pixels. For example, use `alt_conversion_col = 'Baro_Alt` if the measurements used the barometer to convert measurements into meters. 
+Next, we'll use `parse_observations()` to prepare the whale data. Since `Xcertainty` incorporates errors associated with both a LiDAR altimeter and a barometer into the output measurement, the input measurements must be in pixels. In our example dataset of gray whales, measurements are already in pixels. If measurements in a dataframe are in meters, they can easily be converted into pixels using `alt_conversion_col` to assign which altitude column should be used to "back calculate" measurements in meters into pixels. For example, use `alt_conversion_col = 'Baro_Alt` if the measurements used the barometer to convert measurements into meters.   
+
+Note that you can also set the specific timepoint to link measurements of individuals using `timepoint_col`. For example, if you wanted all the total body length measurements of an individual included to produce a single length measurement over the course of the season, you may choose `timepoint_col = 'year'`, or you may want body condition at the daily level, so you could enter `timepoint_col = 'date'`. In our example, measurements are already synced at the daily level, so we will keep default as is.
 
 &nbsp;
 
@@ -174,7 +179,7 @@ This creates a list of three dataframes:
 
 
 ## Build sampler
-Now we will build a sampler. Here we use non-informative priors, which should be appropriate for most datasets -- but see the vignette *Xcertainty_informative_priors* for an example of using informative priors. We also set the altitudes (`image_altitude`) and object length measurements (`object_lengths`) to cover an overly wide range for our target species.  
+Now we will build a sampler. Always start first with using non-informative priors, which should be appropriate for most datasets. In some cases, using informative priors may be more appropriate, especially for datasets that have high errors and when the model is overparameterized -- see the vignette *Xcertainty_informative_priors* for an example. We'll set the altitudes (`image_altitude`) and object length measurements (`object_lengths`) to cover an overly wide range for our target species.  
 ```{r}
 sampler = independent_length_sampler(
   data = combine_observations(calibration_data, whale_data),
