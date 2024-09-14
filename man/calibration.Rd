@@ -3,32 +3,29 @@
 \docType{data}
 \name{calibration}
 \alias{calibration}
-\title{Calibration data for photogrammetric measurement error model}
+\title{Calibration (training) data}
 \format{
-A data frame with 657 rows and 10 variables:
+A data frame with 657 rows and 10 columns:
 \describe{
-  \item{CO.ID}{Training object name}
-  \item{Lpix}{Measured length of object in image (in pixels)}
-  \item{CO.L}{True length of calibration object (in meters)}
-  \item{image}{Name of image that measurements are taken from}
-  \item{Baro_Alt}{The altitude (in meters) at which the image was 
-        taken, according to the onboard barometer}
-  \item{Laser_Alt}{The altitude (in meters) at which the image was 
-        taken, according to the attached laser altimeter}
-  \item{Focal_Length}{The focal length of the lens when the image was taken, 
-        in mm}
-  \item{Iw}{The width of the image, in pixels}
-  \item{Sw}{The width of the camera sensor, in mm}
-  \item{uas}{An identifier for the unoccupied aerial system (UAS) the image 
-        and measurements are from}
+  \item{CO.ID}{the calibration object ID in training data}
+  \item{L_px}{length measurement (px)}
+  \item{CO.L}{the true length of the calibration object (m)}
+  \item{image}{image name}
+  \item{Baro_Alt}{the barometer altitude adjusted for the launch height of the drone: Baro_raw + Launch_Ht}
+  \item{Laser_Alt}{the altitude recorded by the laser (LiDAR) altimeter}
+  \item{Focal_Length}{focal length of the camera (mm)}
+  \item{Iw}{image width (px)} 
+  \item{Sw}{sensor width (mm)}
+  \item{uas}{the unoccupied aircraft system (UAS), or drone, used in data collection}
 }
+}
+\source{
+<https://doi.org/10.1111/gcb.17366>
 }
 \usage{
 calibration
 }
 \description{
-A dataset containing photogrammetric measurements of known-length objects, 
-used to estimate the characteristics of measurement errors attributed to the
-drone platform.
+Photogrammetric measurements of known-sized calibration objects to be used as training data.
 }
 \keyword{datasets}

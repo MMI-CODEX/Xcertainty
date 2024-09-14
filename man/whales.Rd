@@ -3,36 +3,33 @@
 \docType{data}
 \name{whales}
 \alias{whales}
-\title{Photogrammetric measurements of whales}
+\title{Gray whale metadata}
 \format{
-A data frame with 76 rows and 8 variables:
+A data frame with 826 rows and 14 columns:
 \describe{
-  \item{whale_ID}{Unique identifier for the whale, matching 
-    \code{whale_info$Subject}
-   }
-  \item{sex}{The whale's sex}
-  \item{Age}{The whale's age at time of observation}
-  \item{AgeType}{Additional details about the Age measurement}
-  \item{year}{The year in which measurements were made}
-  \item{date}{YYYY-MM-DD date string in which measurements were made}
-  \item{Image}{Name of image measurements are taken from}
-  \item{AltitudeBarometer}{The altitude (in meters) at which the image was 
-        taken, according to the onboard barometer}
-  \item{AltitudeLaser}{The altitude (in meters) at which the image was 
-        taken, according to the attached laser altimeter}
-  \item{FocalLength}{The focal length of the lens when the image was taken, 
-        in mm}
-  \item{ImageWidth}{The width of the image, in pixels}
-  \item{SensorWidth}{The width of the camera sensor, in mm}
-  \item{UAS}{An identifier for the unoccupied aerial system (UAS) the image 
-        and measurements are from}
-  \item{TL.pix}{Total length of whale in image (in pixels)}
+  \item{whale_ID}{unique individual}
+  \item{sex}{Female, Male, or NA}
+  \item{Age}{age in years}
+  \item{AgeType}{either 'known age' if individual was seen as a calf, or 'min age' from the date of date sighting}
+  \item{year}{Year}
+  \item{date}{Date}
+  \item{Image}{image name}
+  \item{AltitudeBarometer}{the barometer altitude adjusted for the launch height of the drone}
+  \item{AltitudeLaser}{the altitude recorded by the laser (LiDAR) altimeter}
+  \item{FocalLength}{focal length of the camera (mm)}
+  \item{ImageWidth}{image width (px)} 
+  \item{SensorWidth}{sensor width (mm)}
+  \item{UAS}{the unoccupied aircraft system (UAS), or drone, used in data collection}
+  \item{TL.pix}{the total body length measurement in pixels}
 }
+}
+\source{
+<https://doi.org/10.1111/gcb.17366>
 }
 \usage{
 whales
 }
 \description{
-A dataset containing Photogrammetric measurements of whales.
+Gray whale information and metadata that pairs with 'whales' data by "Subject"
 }
 \keyword{datasets}

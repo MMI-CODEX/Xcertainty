@@ -3,24 +3,12 @@
 \docType{data}
 \name{body_condition_measurements}
 \alias{body_condition_measurements}
-\title{Photogrammetric measurements of whales}
+\title{Humpback whale measurement data from Duke University's Marine Robotics and Remote Sensing (MaRRS) Lab}
 \format{
-A data frame with 29 rows and 28 variables:
+A data frame with 29 rows and 28 columns:
 \describe{
-  \item{Animal_ID}{Unique identifier for the whale}
-  \item{Image}{Name of image measurements are taken from}
-  \item{BaroAlt}{The altitude (in meters) at which the image was 
-        taken, according to the onboard barometer}
-  \item{LaserAlt}{The altitude (in meters) at which the image was 
-        taken, according to the attached laser altimeter}
-  \item{Focal_Length}{The focal length of the lens when the image was taken, 
-        in mm}
-  \item{Iw}{The width of the image, in pixels}
-  \item{Sw}{The width of the camera sensor, in mm}
-  \item{Aircraft}{An identifier for the unoccupied aerial system (UAS) the 
-        image and measurements are from}
-  \item{TL}{Total length of whale in image (m), pre-computed from pixels
-        using the reported laser altimeter measurement}
+  \item{Animal_ID}{unique ID for the individual whale}
+  \item{TL}{total body length measurement (m)}
   \item{TL.10.0..Width}{Width of whale (m), pre-computed from pixels using 
         the reported laser altimeter measurement.  Width is taken at a 
         cross-section perpendicular to the whale's center line, running
@@ -82,14 +70,22 @@ A data frame with 29 rows and 28 variables:
   \item{TL.5.0..Width}{Same as \code{TL.10.0..Width}, but taken at a 
         cross-section that is 5% of the distance from the animal's rostrum 
         to its peduncle.}
+  \item{Image}{image name}
+  \item{BaroAlt}{the barometer altitude adjusted for the launch height of the drone}
+  \item{LaserAlt}{the altitude recorded by the laser (LiDAR) altimeter}
+  \item{Focal_Length}{focal length of the camera (mm)}
+  \item{Iw}{image width (px)} 
+  \item{Sw}{sensor width (mm)}
+  \item{Aircraft}{the unoccupied aircraft system (UAS), or drone, used in data collection}
 }
+}
+\source{
+<https://doi.org/10.3389/fmars.2021.749943>
 }
 \usage{
 body_condition_measurements
 }
 \description{
-A dataset containing Photogrammetric measurements of whales.  In particular,
-the dataset includes measurements for a whale's total length and it's width 
-along its body, at 5% increments of total length.
+Photogrammetric measurements of humpback whales to estimate total body length and body condition.
 }
 \keyword{datasets}

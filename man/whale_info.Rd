@@ -3,22 +3,24 @@
 \docType{data}
 \name{whale_info}
 \alias{whale_info}
-\title{Metadata about whale observations}
+\title{Gray whale metadata}
 \format{
-A data frame with 293 rows and 5 variables:
+A data frame with 293 rows and 5 columns:
 \describe{
-  \item{Year}{The year the observations were made}
-  \item{Subject}{Unique identifier for the whale}
-  \item{Group}{A categorical variable describing the whale's sex}
-  \item{ObservedAge}{The whale's age at time of observation}
-  \item{AgeType}{Additional details about the ObservedAge measurement}
+  \item{Year}{year}
+  \item{Subject}{unique ID for individuals}
+  \item{Group}{sex; Male, Female (F), or NA}
+  \item{ObservedAge}{age in years}
+  \item{AgeType}{either 'known age' if individual was seen as a calf, or 'min age' from the date of date sighting}
 }
+}
+\source{
+<https://doi.org/10.1111/gcb.17366>
 }
 \usage{
 whale_info
 }
 \description{
-A dataset containing additional information about whales for which 
-measurements were taken
+Gray whale information and metadata that pairs with 'whales' data by "Subject"
 }
 \keyword{datasets}
