@@ -4,7 +4,7 @@ output: rmarkdown::html_vignette
 description: >
    Here we'll show an example of using informative priors in the Xcertainty indpendent_length_sampler(). 
 vignette: >
-  %\VignetteIndexEntry{Introduction to Xcertainty}
+  %\VignetteIndexEntry{Xcertainty informative priors}
   %\VignetteEngine{knitr::rmarkdown}
   \usepackage[utf8]{inputenc}
 fontsize: 13pt 

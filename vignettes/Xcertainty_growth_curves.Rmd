@@ -4,7 +4,7 @@ output: rmarkdown::html_vignette
 description: >
   Here we provide an example of the Xcertainty growth_curve_sampler(). You'll learn how to use data containing individuals with replicate samples consisting of drone-based measurments and age information to fit a Von Bertalanffy-Putter growth curve in a Bayesian framework.
 vignette: >
-  %\VignetteIndexEntry{Introduction to Xcertainty}
+  %\VignetteIndexEntry{Xcertainty Growth Curves}
   %\VignetteEngine{knitr::rmarkdown}
   \usepackage[utf8]{inputenc}
 fontsize: 13pt 
