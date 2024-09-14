@@ -8,7 +8,7 @@
 A data frame with 46 rows and 9 columns:
 \describe{
   \item{L_train}{the true length of the calibration object (m)}
-  \item{RRR.px}{length measurement (px)}
+  \item{RRR.pix}{length measurement (px)}
   \item{Images}{image name}
   \item{Baro...Ht}{the barometer altitude adjusted for the launch height of the dronet}
   \item{Laser_Alt}{the altitude recorded by the laser (LiDAR) altimeter}

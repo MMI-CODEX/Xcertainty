@@ -103,7 +103,7 @@
 #' @format A data frame with 657 rows and 10 columns:
 #' \describe{
 #'   \item{CO.ID}{the calibration object ID in training data}
-#'   \item{L_px}{length measurement (px)}
+#'   \item{Lpix}{length measurement (px)}
 #'   \item{CO.L}{the true length of the calibration object (m)}
 #'   \item{image}{image name}
 #'   \item{Baro_Alt}{the barometer altitude adjusted for the launch height of the drone: Baro_raw + Launch_Ht}
@@ -123,7 +123,7 @@
 #' @format A data frame with 46 rows and 9 columns:
 #' \describe{
 #'   \item{L_train}{the true length of the calibration object (m)}
-#'   \item{RRR.px}{length measurement (px)}
+#'   \item{RRR.pix}{length measurement (px)}
 #'   \item{Images}{image name}
 #'   \item{Baro...Ht}{the barometer altitude adjusted for the launch height of the dronet}
 #'   \item{Laser_Alt}{the altitude recorded by the laser (LiDAR) altimeter}
@@ -150,12 +150,12 @@
 #'   \item{Sw}{sensor width (mm)}
 #'   \item{Iw}{image width (px)}
 #'   \item{Focal_Length}{focal length of the camera (mm)}
-#'   \item{Focal_Length_adg}{the adjusted focal length (mm) to account for internal processing that corrects for barrel distortion}
+#'   \item{Focal_Length_adj}{the adjusted focal length (mm) to account for internal processing that corrects for barrel distortion}
 #'   \item{Baro_raw}{raw altitude recorded by the barometer altimeter}
 #'   \item{Launch_Ht}{the launch height of the drone}
 #'   \item{Baro_Alt}{the barometer altitude adjusted for the launch height of the drone: Baro_raw + Launch_Ht}
 #'   \item{Laser_Alt}{the altitude recorded by the laser (LiDAR) altimeter}
-#'   \item{L_px}{length measurement (px)}
+#'   \item{Lpix}{length measurement (px)}
 #' }
 #' @source <https://doi.org/10.1139/dsa-2023-0051> 
 "co_data"
@@ -172,7 +172,7 @@
 #'   \item{DOY}{Day of Year}
 #'   \item{uas}{the unoccupied aircraft system (UAS), or drone, used in data collection}
 #'   \item{Focal_Length}{focal length of the camera (mm)}
-#'   \item{Focal_Length_adg}{the adjusted focal length (mm) to account for internal processing that corrects for barrel distortion}
+#'   \item{Focal_Length_adj}{the adjusted focal length (mm) to account for internal processing that corrects for barrel distortion}
 #'   \item{Sw}{sensor width (mm)}
 #'   \item{Iw}{image width (px)}
 #'   \item{Baro_raw}{raw altitude recorded by the barometer altimeter}

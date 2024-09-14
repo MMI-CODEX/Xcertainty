@@ -13,7 +13,7 @@ A tibble with 15 rows and 34 columns:
   \item{DOY}{Day of Year}
   \item{uas}{the unoccupied aircraft system (UAS), or drone, used in data collection}
   \item{Focal_Length}{focal length of the camera (mm)}
-  \item{Focal_Length_adg}{the adjusted focal length (mm) to account for internal processing that corrects for barrel distortion}
+  \item{Focal_Length_adj}{the adjusted focal length (mm) to account for internal processing that corrects for barrel distortion}
   \item{Sw}{sensor width (mm)}
   \item{Iw}{image width (px)}
   \item{Baro_raw}{raw altitude recorded by the barometer altimeter}

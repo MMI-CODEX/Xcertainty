@@ -8,7 +8,7 @@
 A data frame with 657 rows and 10 columns:
 \describe{
   \item{CO.ID}{the calibration object ID in training data}
-  \item{L_px}{length measurement (px)}
+  \item{Lpix}{length measurement (px)}
   \item{CO.L}{the true length of the calibration object (m)}
   \item{image}{image name}
   \item{Baro_Alt}{the barometer altitude adjusted for the launch height of the drone: Baro_raw + Launch_Ht}

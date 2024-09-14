@@ -16,12 +16,12 @@ A data frame with 118 rows and 15 columns:
   \item{Sw}{sensor width (mm)}
   \item{Iw}{image width (px)}
   \item{Focal_Length}{focal length of the camera (mm)}
-  \item{Focal_Length_adg}{the adjusted focal length (mm) to account for internal processing that corrects for barrel distortion}
+  \item{Focal_Length_adj}{the adjusted focal length (mm) to account for internal processing that corrects for barrel distortion}
   \item{Baro_raw}{raw altitude recorded by the barometer altimeter}
   \item{Launch_Ht}{the launch height of the drone}
   \item{Baro_Alt}{the barometer altitude adjusted for the launch height of the drone: Baro_raw + Launch_Ht}
   \item{Laser_Alt}{the altitude recorded by the laser (LiDAR) altimeter}
-  \item{L_px}{length measurement (px)}
+  \item{Lpix}{length measurement (px)}
 }
 }
 \source{

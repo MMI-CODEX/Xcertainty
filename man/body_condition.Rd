@@ -48,6 +48,7 @@ Function that post-processes posterior samples from a sampler, such as
 }
 \examples{
 library(stringr)
+library(dplyr)
 
 #
 # parse data for Xcertainty
@@ -56,9 +57,9 @@ library(stringr)
 data("calibration2")
 data("body_condition_measurements")
 
-body_condition_measurements <- body_condition_measurements \%>\% select(!c(TL.10.0..Width, TL.15.0..Width,
-                                          TL.5.0..Width, TL.90.0..Width,
-                                          TL.95.0..Width))
+body_condition_measurements <- body_condition_measurements \%>\% 
+  select(!c(TL.10.0..Width, TL.15.0..Width, TL.5.0..Width, TL.90.0..Width,
+            TL.95.0..Width))
 
 # parse calibration study
 calibration_data = parse_observations(
