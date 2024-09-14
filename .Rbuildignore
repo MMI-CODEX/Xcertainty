@@ -11,3 +11,4 @@ cran-comments.md
 ^Meta$
 ^examples
 README.md
+inst/doc

@@ -1,5 +1,15 @@
 # Xcertainty
 
+# Getting started
+
+You can use the [devtools](https://cran.r-project.org/package=devtools) package for R to install Xcertainty directly from Github.  Run the following command from an R session:
+
+```
+devtools::install_github('jmhewitt/Xcertainty')
+```
+
+Then, take a look at some vignettes that review example uses of the package in the [inst/doc](inst/doc) folder.
+
 # Developer notes
 
 The following notes form a living document that describes development approach the `R` package `Xcertainty` uses.
