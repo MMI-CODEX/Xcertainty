@@ -5,10 +5,11 @@
 You can use the [devtools](https://cran.r-project.org/package=devtools) package for R to install Xcertainty directly from Github.  Run the following command from an R session:
 
 ```
-devtools::install_github('jmhewitt/Xcertainty')
+devtools::install_github('CODEX-MMI/Xcertainty')
 ```
 
-Then, take a look at some vignettes that review example uses of the package in the [inst/doc](inst/doc) folder.
+Then, take a look at some vignettes that review example uses of the package in the [inst/doc](inst/doc) folder. Start with the [Xcertainty](inst/doc/Xcertainty.html) vignette, as this will give a proper introduction to using `Xcertainty` and overview of how to use the `independent_length_sampler()` and `body_condition` functions. 
+
 
 # Developer notes
 

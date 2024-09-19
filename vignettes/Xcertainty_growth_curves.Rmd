@@ -188,89 +188,95 @@ output_growth$summaries$growth_curve[1:10,]
 
 &nbsp;
 
-Let's now create a data frame with the posterior summaries for each individual's length. We will first save the total length output summaries, then save the birth year outputs, then combine both of these dataframes by `Subject`, and then join with `whale_info` to sync sex and AgeType Finally, we'll calculate the estimated age from the sample year and the estimated birth year. 
+Let's now create a data frame with the posterior summaries for each individual's length. We will first save the total length output summaries, then save the birth year outputs, then combine both of these dataframes by `Subject`, and then join with `whale_info` to sync sex and AgeType Finally, we'll calculate the estimated age from the sample year from the estimated birth year. 
 ```{r}
 # total length summary outputs for each subject
 sums_L <- output_growth$summaries$objects
 
 # birth year summary outputs for each subject
 birth_year <- output_growth$growth_curve$birth_year$summary %>% rename_with(~str_c("birth_year_", .), everything()) %>%
-  separate(birth_year_parameter, c("Subject", "parameter"), sep = " ") %>% select(!parameter)
+  separate(birth_year_parameter, c("Subject", "Parameter"), sep = " ") %>% dplyr::select(!"Parameter")
 
 # combine total length and birth year summary outputs. Then join with whale info to get sex, AgeType. Finally, calculated new estimated age. 
 sum <- sums_L %>% 
   left_join(birth_year, by = "Subject") %>% mutate(Year = as.integer(Timepoint)) %>%
   left_join(whale_info %>% mutate(Subject = as.factor(Subject)) %>% rename(sex = Group), by = c("Subject", "Year")) %>% 
-  relocate(Year, .before = Timepoint) %>% mutate(Age_est = Year - birth_year_mean)
+  relocate(Year, .before = Timepoint) %>% 
+  mutate(Age_est_mean = Year - birth_year_mean, 
+         Age_est_lower = Year - birth_year_upper, 
+         Age_est_upper = Year - birth_year_lower)
 ```
 
 &nbsp;
 
-We can view these results
+We can view these results and plot the uncertainty associated with total body length (solid vertical line) and estimated age (dashed horizontal line).
 ```{r}
 ggplot() + theme_bw() + 
-  geom_pointrange(data = sum, aes(x = Age_est, y = mean, ymin = lower, ymax = upper)) +
+  geom_pointrange(data = sum, aes(x = Age_est_mean, y = mean, ymin = lower, ymax = upper)) +
+  geom_errorbarh(data = sum, 
+                 aes(xmin = Age_est_lower, xmax = Age_est_upper, y = mean), lty = 2) + 
   xlab("estimated age") + ylab("total body length (m)") 
 
 ```
 
 &nbsp; 
 
-Now we'll save the posterior summaries of the growth parameters and then create a dataframe and calculate the expected length for male and females separately using the Von Bertalanffy-Putter growth equation.
-
+Now we'll calculate the expected growth for male and females separately between ages 1-40. We'll first save the posterior samplers of the growth parameters and sex-based asymptotic lengths in a dataframe. We'll then calculate the expected length for male and females at each age using the Von Bertalanffy-Putter growth equation for each MCMC iteration. This will generate a distribution for the expected length at each age for male and females separately. We can then summarize these distributions to get the mean expected length and uncertainty as the 95% HPDI. 
 ```{r}
-growth_params <- output_growth$summaries$growth_curve[1:6, ]
-growth_params
 
-## Females
-growth_F <- data.frame(Age_est = as.integer(seq(from  = 1, to = 40, by = 1)),
-           sex = "Female", 
-            t0.mean = growth_params[1,2],
-           t0.lower = growth_params[1,4],
-           t0.upper = growth_params[1,5],
-           K.mean = growth_params[2,2],
-           K.lower = growth_params[2,4],
-           K.upper = growth_params[2,5],
-            L.asym.F.mean = growth_params[3,2],
-           L.asym.F.lower = growth_params[3,4],
-           L.asym.F.upper = growth_params[3,5]) %>%
-  mutate(Exp.L.mean = L.asym.F.mean * (1-exp(-K.mean * (Age_est - t0.mean))),
-         Exp.L.lower = L.asym.F.lower * (1-exp(-K.lower * (Age_est - t0.lower))),
-         Exp.L.upper = L.asym.F.upper * (1-exp(-K.upper * (Age_est - t0.upper))))
+pred_growth <- rbind(data.frame(t0 = output_growth$growth_curve$zero_length_age$samples,
+           k = output_growth$growth_curve$growth_rate$samples,
+           sex = "Female",
+           A = output_growth$growth_curve$group_asymptotic_size$samples[,1]),
+           data.frame(
+           t0 = output_growth$growth_curve$zero_length_age$samples,
+           k = output_growth$growth_curve$growth_rate$samples,
+           sex = "Male",
+           A = output_growth$growth_curve$group_asymptotic_size$samples[,2]))
 
-## Males
-growth_M <- data.frame(Age_est = as.integer(seq(from  = 1, to = 40, by = 1)),
-           sex = "Male", 
-            t0.mean = growth_params[1,2],
-           t0.lower = growth_params[1,4],
-           t0.upper = growth_params[1,5],
-           K.mean = growth_params[2,2],
-           K.lower = growth_params[2,4],
-           K.upper = growth_params[2,5],
-            L.asym.M.mean = growth_params[4,2],
-           L.asym.M.lower = growth_params[4,4],
-           L.asym.M.upper = growth_params[4,5]) %>%
-  mutate(Exp.L.mean = L.asym.M.mean * (1-exp(-K.mean * (Age_est - t0.mean))),
-         Exp.L.lower = L.asym.M.lower * (1-exp(-K.lower * (Age_est - t0.lower))),
-         Exp.L.upper = L.asym.M.upper * (1-exp(-K.upper * (Age_est - t0.upper))))
+age_list <- seq(from  = 1, to = 40, by = 1)
+sex_list <- c("Male", "Female")
+
+age_df <- data.frame()
+full_df <- data.frame()
+
+for (s in sex_list){
+  s_x = s
+for (i in age_list){
+  yr0 = i
+  growth_filt = pred_growth %>% filter(sex == s_x)
+  Exp.L = growth_filt$A * (1-exp(-growth_filt$k * (yr0 - growth_filt$t0)))
+  Exp.L_mean = mean(Exp.L)
+  Exp.L_lower = HPDinterval(mcmc(Exp.L))[1]
+  Exp.L_upper = HPDinterval(mcmc(Exp.L))[2]
+  temp_df <- data.frame(age = yr0, sex = s_x, 
+                        Exp.L_mean, Exp.L_lower = Exp.L_lower, Exp.L_upper = Exp.L_upper) 
+  age_df <- rbind(age_df, temp_df)
+}
+  full_df <- rbind(full_df, age_df)
+}
+
+View(full_df)
+
 ```
 
 
 $nbsp; 
 
-Now we can plot the results
+
+Now we can plot the results 
 ```{r}
-sum %>% filter(!is.na(sex)) %>%
-  ggplot() + theme_bw() + 
-  geom_pointrange(aes(x = Age_est, y = mean, ymin = lower, ymax = upper, color = sex)) +
-  scale_color_manual(values = c(Female = "lightblue3", Male = "darkorange")) +
+ggplot() + theme_bw() + 
   xlab("estimated age") + ylab("total body length (m)") + 
-  # Females growth curve
-  geom_ribbon(data = growth_F, aes(x = Age_est, ymin = Exp.L.lower, ymax = Exp.L.upper), fill = "lightblue", alpha = 0.4) + 
-  geom_line(data = growth_F, aes(x = Age_est, y = Exp.L.mean), color = "lightblue4") +
-  # Males growth curve  
-  geom_ribbon(data = growth_M, aes(x = Age_est, ymin = Exp.L.lower, ymax = Exp.L.upper), fill = "orange", alpha = 0.4) + 
-  geom_line(data = growth_M, aes(x = Age_est, y = Exp.L.mean), color = "darkorange")
+  geom_ribbon(data = full_df, aes(x = age, ymin = Exp.L_lower, ymax = Exp.L_upper, fill = sex), alpha = 0.4) + 
+  geom_line(data = full_df, aes(x = age, y = Exp.L_mean, color = sex)) +
+  scale_color_manual(values = c(Female = "lightblue3", Male = "darkorange")) +
+  scale_fill_manual(values = c(Female = "lightblue3", Male = "darkorange")) +
+  geom_pointrange(data = sum %>% filter(!is.na(sex)),
+                  aes(x = Age_est_mean, y = mean, ymin = lower, ymax = upper, color = sex)) +
+  geom_errorbarh(data = sum, 
+                 aes(xmin = Age_est_lower, xmax = Age_est_upper, y = mean, color = sex), lty = 3) 
+  
 ```
 
 &nbsp;
