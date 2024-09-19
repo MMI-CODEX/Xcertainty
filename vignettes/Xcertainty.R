@@ -150,7 +150,8 @@ body_condition_output = body_condition(
   length_name = 'TL_px',
   width_names = width_names,
   width_increments = width_increments,
-  summary.burn = .5
+  summary.burn = .5,
+  height_ratios = rep(1, length(width_names)) # assumes circular cross section
 )
 
 ## -----------------------------------------------------------------------------

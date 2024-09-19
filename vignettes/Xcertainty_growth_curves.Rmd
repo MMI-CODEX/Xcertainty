@@ -223,7 +223,7 @@ ggplot() + theme_bw() +
 
 Now we'll calculate the expected growth for male and females separately between ages 1-40. We'll first save the posterior samplers of the growth parameters and sex-based asymptotic lengths in a dataframe. We'll then calculate the expected length for male and females at each age using the Von Bertalanffy-Putter growth equation for each MCMC iteration. This will generate a distribution for the expected length at each age for male and females separately. We can then summarize these distributions to get the mean expected length and uncertainty as the 95% HPDI. 
 ```{r}
-
+# create a dataframe of the output growth parameters
 pred_growth <- rbind(data.frame(t0 = output_growth$growth_curve$zero_length_age$samples,
            k = output_growth$growth_curve$growth_rate$samples,
            sex = "Female",
@@ -234,6 +234,7 @@ pred_growth <- rbind(data.frame(t0 = output_growth$growth_curve$zero_length_age$
            sex = "Male",
            A = output_growth$growth_curve$group_asymptotic_size$samples[,2]))
 
+# write a loop to calculate the expected length for male and females between ages 1-40 for each MCMC iteration to create a distribution. Then calculate the mean and HPDIs from the distribution for each expected length.
 age_list <- seq(from  = 1, to = 40, by = 1)
 sex_list <- c("Male", "Female")
 
@@ -279,4 +280,4 @@ ggplot() + theme_bw() +
 
 &nbsp;
 
-Note, you can create custom samplers to use different growth equations (i.e., Gompertz, etc.). See  [Xcertainty](https://github.com/jmhewitt/Xcertainty/tree/main) to learn more. 
+Note, you can create custom samplers to use different growth equations (i.e., Gompertz, etc.). See  [Xcertainty](https://github.com/MMI-CODEX/Xcertainty/tree/main) to learn more. 

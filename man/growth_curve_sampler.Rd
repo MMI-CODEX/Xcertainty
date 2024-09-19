@@ -34,7 +34,7 @@ Build an MCMC sampler that uses calibration data to estimate the total
 length of animals.  The total lengths are assumed to follow a growth curve
 model, so replicates across time points that include age information are 
 required to fit the model.  The length model is a von-Bertalanffy-Putter 
-growth model, following Pirotta and Bierlich et al. (2024).
+growth model, following Pirotta & Bierlich et al., (in revision).
 }
 \examples{
 # load example wide-format data

@@ -4,12 +4,12 @@ output: rmarkdown::html_vignette
 description: >
   Start here to learn how to use Xcertainty. You'll learn how to include drone-based measurement data into a Bayesian statistical model to produce predictive posterior distributions that can be used to describe each measurement and its associated uncertainty.
 vignette: >
-  %\VignetteIndexEntry{Introduction to Xcertainty}
+  %\VignetteIndexEntry{Xcertainty}
   %\VignetteEngine{knitr::rmarkdown}
   \usepackage[utf8]{inputenc}
 fontsize: 13pt 
 author: "KC Bierlich & Josh Hewitt, CODEX"
-date: "2024-08-29"
+date: "2024-09-19"
 ---
 
 ```{r setup, include=FALSE}
@@ -54,7 +54,7 @@ In this vignette, we'll cover how to setup your data, run `Xcertainty`, calculat
 
 
 ## Example: Gray whale body length and body condition
-We will use a small example dataset consisting of body length and body width measurements of Pacific Coast Feeding Group (PCFG) gray whales imaged along the coast of Newport, Oregon, USA using two different drones, a DJI Inspire 2 (I2, n = 5 individuals) and a DJI Phantom 4 Pro (P4P, n = 5 individuals).The P4P contains only a barometer for estimating altitude, while the I2 contains both a barometer and a LiDAR (or laser) altimeter (LidarBoX, [Bierlich et al., 2024](https://doi.org/10.1139/dsa-2023-0051)). In this example, we will use data from the I2 (see *Xcertianty_informative_priors* for an example using P4P data).
+We will use a small example dataset consisting of body length and body width measurements of Pacific Coast Feeding Group (PCFG) gray whales imaged along the coast of Newport, Oregon, USA using two different drones, a DJI Inspire 2 (I2, n = 5 individuals) and a DJI Phantom 4 Pro (P4P, n = 5 individuals). The P4P contains only a barometer for estimating altitude, while the I2 contains both a barometer and a LiDAR (or laser) altimeter (LidarBoX, [Bierlich et al., 2024](https://doi.org/10.1139/dsa-2023-0051)). In this example, we will use data from the I2 (see [Xcertianty_informative_priors](Xcertianty_informative_priors.html) for an example using P4P data).
 
 We will use the length and width measurements to calculate several body condition metrics (body area index, body volume, surface area, and 
 standardized widths). We used open-source software [MorphoMetriX v2](https://github.com/ZappyMan/MorphoMetriX-V2) and [CollatriX](https://github.com/cbirdferrer/collatrix) to measure the whales and process the measurements, respectively.
@@ -179,7 +179,7 @@ This creates a list of three dataframes:
 
 
 ## Build sampler
-Now we will build a sampler. Always start first with using non-informative priors, which should be appropriate for most datasets. In some cases, using informative priors may be more appropriate, especially for datasets that have high errors and when the model is overparameterized -- see the vignette *Xcertainty_informative_priors* for an example. We'll set the altitudes (`image_altitude`) and object length measurements (`object_lengths`) to cover an overly wide range for our target species.  
+Now we will build a sampler. Always start with using non-informative priors, which should be appropriate for most datasets. In some cases, using informative priors may be more appropriate, especially for datasets that have high errors and when the model is overparameterized -- see the vignette [Xcertianty_informative_priors](Xcertianty_informative_priors.html) for an example. We'll set the altitudes (`image_altitude`) and object length measurements (`object_lengths`) to cover an overly wide range for our target species.  
 ```{r}
 sampler = independent_length_sampler(
   data = combine_observations(calibration_data, whale_data),
@@ -214,7 +214,7 @@ output = sampler(niter = 1e6, thin = 10)
 
 
 ## View Sampler Outputs (TL and widths) 
-Our saved `output` contains all the posterior samples and summaries of all training data and length and width measurements from the sampler. Note, that there are many objects stored in `output`, so it is best to view specific selections rather than viewing all of the objects stored in `output` at once, as this can take a very long time to load and cause R to freeze. 
+Our saved `output` contains all the posterior samples and summaries of all training data and length and width measurements from the sampler. **Note**, that there are many objects stored in `output`, so it is best to view specific selections rather than viewing all of the objects stored in `output` at once, as this can take a very long time to load and cause R to freeze. 
 
 &nbsp;
 
@@ -222,6 +222,8 @@ We can view the posterior summaries (mean, sd, etc.) for each altimeter. Note th
 ```{r}
 output$summaries$altimeters
 ```
+
+&nbsp;
 
 And we can view and compare the posterior outputs for each image's altitude compared to the observed altitude from the barometer (blue) and LiDAR (orange) in the training dataset.
 ```{r, fig.dim = c(7, 5)}
@@ -289,12 +291,19 @@ data.frame(TL = ID_samples[(length(ID_samples)/2):length((ID_samples))]) %>%
 
 
 ### Body Condition 
-We'll also calculate body condition from the posterior samples using `body_condition()`, which calculates several body condition metrics using the posterior distributions of the body widths:  
-  + body area index (BAI) [Burnett et al., 2018](https://doi.org/10.1111/mms.12527); [Bierlich et al. (2021b)](https://doi.org/10.3389/fmars.2021.749943) 
-  + body volume [Christiansen et al. 2021](https://doi.org/10.3354/meps13585) 
-  + surface area [Christiansen et al., 2016](https://doi.org/10.1002/ecs2.1468) 
-  + standardized body widths (standardized by TL).
 
+We'll also calculate body condition from the posterior samples using `body_condition()`, which calculates several body condition metrics using the posterior distributions of the body widths:  
+
+  + body area index (BAI) [Burnett et al., 2018](https://doi.org/10.1111/mms.12527); [Bierlich et al. (2021b)](https://doi.org/10.3389/fmars.2021.749943)  
+  
+  + body volume [Christiansen et al. 2021](https://doi.org/10.3354/meps13585)  
+  
+  + surface area [Christiansen et al., 2016](https://doi.org/10.1002/ecs2.1468)  
+  
+  + standardized body widths (standardized by TL).   
+
+
+Note, for calculating body volume, the default for `height_ratios` is 1, implying that the vertical cross section of the animal is circular rather than elliptical. To calculate body volume using an elliptical model [i.e., Christiansen et al., 2019](https://doi.org/10.1111/2041-210X.13298), enter the the height-width ratio for each width using `height_ratios`. 
  
 ```{r}
 # First, enumerate the width locations along the animal's length
@@ -312,7 +321,8 @@ body_condition_output = body_condition(
   length_name = 'TL_px',
   width_names = width_names,
   width_increments = width_increments,
-  summary.burn = .5
+  summary.burn = .5,
+  height_ratios = rep(1, length(width_names)) # assumes circular cross section
 )
 ```
 
@@ -412,6 +422,7 @@ data.frame(BAI = ID_samples[(length(ID_samples)/2):length((ID_samples))]) %>%
 
 &nbsp;
 
-We hope this vignette has been helpful for getting started with organizing your input data and how to view and interpret results. Check out other vignettes to view examples of other samplers, as well as using informative priors. 
+We hope this vignette has been helpful for getting started with organizing your input data and how to view and interpret results. Check out our other vignettes to view examples of other samplers, including using [informative priors](Xcertianty_informative_priors.html) 
+and [growth curves](Xcertianty_growth_curves.html). 
 
 
