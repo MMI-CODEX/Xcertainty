@@ -256,8 +256,6 @@ for (i in age_list){
   full_df <- rbind(full_df, age_df)
 }
 
-View(full_df)
-
 ```
 
 
