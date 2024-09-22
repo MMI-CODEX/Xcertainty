@@ -151,7 +151,7 @@ sampler = growth_curve_sampler(
 $nbsp;
 
 
-Now run the sampler!
+Now run the sampler! When exploring data outputs, 1e4 or 1e5 can be good place for exploration, as this won't take too much time to run. We recommend using 1e6 for the final analysis since 1e6 MCMC samples is often enough to get a reasonable posterior effective sample size. 
 ```{r}
 output_growth = sampler(niter = 1e4)
 ```
@@ -189,6 +189,7 @@ output_growth$summaries$growth_curve[1:10,]
 
 &nbsp;
 
+
 Let's now create a data frame with the posterior summaries for each individual's length. We will first save the total length output summaries, then save the birth year outputs, then combine both of these dataframes by `Subject`, and then join with `whale_info` to sync sex and AgeType Finally, we'll calculate the estimated age from the sample year from the estimated birth year. 
 ```{r}
 # total length summary outputs for each subject
@@ -210,8 +211,9 @@ sum <- sums_L %>%
 
 &nbsp;
 
+## Plot Growth Curves
 We can view these results and plot the uncertainty associated with total body length (solid vertical line) and estimated age (dashed horizontal line).
-```{r}
+```{r, fig.dim = c(7, 5)}
 ggplot() + theme_bw() + 
   geom_pointrange(data = sum, aes(x = Age_est_mean, y = mean, ymin = lower, ymax = upper)) +
   geom_errorbarh(data = sum, 
@@ -265,7 +267,7 @@ $nbsp;
 
 
 Now we can plot the results 
-```{r}
+```{r, fig.dim = c(7, 5)}
 ggplot() + theme_bw() + 
   xlab("estimated age") + ylab("total body length (m)") + 
   geom_ribbon(data = full_df, aes(x = age, ymin = Exp.L_lower, ymax = Exp.L_upper, fill = sex), alpha = 0.4) + 
