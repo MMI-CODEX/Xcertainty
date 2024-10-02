@@ -1,0 +1,286 @@
+---
+title: "Xcertainty Growth Curves"
+output: rmarkdown::html_vignette
+description: >
+  Here we provide an example of the Xcertainty growth_curve_sampler(). You'll learn how to use data containing individuals with replicate samples consisting of drone-based measurments and age information to fit a Von Bertalanffy-Putter growth curve in a Bayesian framework.
+vignette: >
+  %\VignetteIndexEntry{Xcertainty Growth Curves}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+fontsize: 13pt 
+author: "KC Bierlich & Josh Hewitt, CODEX"
+date: "2024-08-23"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+Before moving forward, be sure to first check out the [Xcertainty](Xcertainty.html) vignette on how to use the `independent_length_sampler()` for a proper introduction on how to use `Xcertainty`. This vignette focuses on the `growth_curve_sampler()`, which uses data containing individuals with replicate body length measurements and age information over time. This model fits a Von Bertalanffy-Putter growth curve to observations and incorporates measurement uncertainty associated with multiple drones following [Pirotta and Bierlich et al., 2024](https://doi.org/10.1111/gcb.17366). 
+
+
+Von Bertalanffy-Putter growth curve equations involve three parameters: growth rate (*k*), asymptotic length (*A*), and the (theoretical) age when size is equal to 0 (*t0*).   
+
+In this vignette, we'll use the `growth_curve_sampler()` to reproduce results derived from the data and methods described by [Pirotta and Bierlich et al., 2024](https://doi.org/10.1111/gcb.17366).  
+
+We'll first load the Xcertainty package, as well as other packages we will use throughout this example.
+```{r, echo=TRUE, warning=FALSE}
+library(Xcertainty)
+
+library(tidyverse)
+library(ggdist)
+library(coda)
+```
+
+
+
+### Data
+We will use calibration and observation (whale) length and age data from [Pirotta and Bierlich et al., 2024](https://doi.org/10.1111/gcb.17366). This data includes imagery collected by five different UAS. Whale age's are estimated using photo-identification history and are labeled as either a 'known age' (if seen as a calf) or a 'minimum age' (based on the date of the first sighting). 
+
+&nbsp;
+
+#### Calibration data
+We'll use a calibration dataset consisting of measurements of a 1 m wooden board collected by five different UAS at various altitudes (13-62 m). 
+```{r}
+data('calibration')
+
+# sample size for each UAS
+table(calibration$uas)
+
+```
+
+
+### parse_observations()
+We'll use `parse_observations()` to prepare the calibration and whale data. 
+Measurements are often recorded in a wide-format dataframe, so parse_observations() converts to long-format data.  
+```{r}
+# parse calibration study
+calibration_data = parse_observations(
+  x = calibration, 
+  subject_col = 'CO.ID',
+  meas_col = 'Lpix', 
+  tlen_col = 'CO.L', 
+  image_col = 'image', 
+  barometer_col = 'Baro_Alt',
+  laser_col = 'Laser_Alt', 
+  flen_col = 'Focal_Length', 
+  iwidth_col = 'Iw', 
+  swidth_col = 'Sw',
+  uas_col = 'uas'
+)
+```
+
+* This creates a list of three dataframes:   
+    + `calibration_data$pixel_counts`.   
+    + `calibration_data$training_objects`.    
+    + `calibration_data$image_info`.  
+
+
+Next, we'll use `parse_observations()` to prepare the whale data. Note, that the `timepoint_col` is set to year since we are interested in the total body length of each individual summarized at the yearly scale. 
+```{r}
+data('whales')
+
+# parse field study
+whale_data = parse_observations(
+  x = whales, 
+  subject_col = 'whale_ID',
+  meas_col = 'TL.pix', 
+  image_col = 'Image', 
+  barometer_col = 'AltitudeBarometer',
+  laser_col = 'AltitudeLaser', 
+  flen_col = 'FocalLength', 
+  iwidth_col = 'ImageWidth', 
+  swidth_col = 'SensorWidth', 
+  uas_col = 'UAS',
+  timepoint_col = 'year'
+)
+```
+
+
+&nbsp;
+
+Now the calibration and whale data are both ready. Time to set up the sampler. 
+
+&nbsp;
+
+## The sampler
+Note that `combine_observations()` is used to combine the `parse_calibrations()` outputs, `calibration_data` and `whale_data`. We will use non-informative priors here. 
+```{r, warning=FALSE}
+sampler = growth_curve_sampler(
+  data = combine_observations(calibration_data, whale_data),
+  priors = list(
+    image_altitude = c(min = 0.1, max = 130),
+    altimeter_bias = rbind(
+      data.frame(altimeter = 'Barometer', mean = 0, sd = 1e2),
+      data.frame(altimeter = 'Laser', mean = 0, sd = 1e2)
+    ),
+    altimeter_variance = rbind(
+      data.frame(altimeter = 'Barometer', shape = .01, rate = .01),
+      data.frame(altimeter = 'Laser', shape = .01, rate = .01)
+    ),
+    altimeter_scaling = rbind(
+      data.frame(altimeter = 'Barometer', mean = 0, sd = 1e1),
+      data.frame(altimeter = 'Laser', mean = 0, sd = 1e1)
+    ),
+    pixel_variance = c(shape = .01, rate = .01),
+    # priors from Agbayani et al. 
+    zero_length_age = c(mean = -5.09, sd = 0.4),
+    growth_rate = c(mean = .18, sd = .01),
+    # additional priors
+    group_asymptotic_size = rbind(
+      Female = c(mean = 12, sd = .5),
+      Male = c(mean = 12, sd = .5)
+    ),
+    group_asymptotic_size_trend = rbind(
+      Female = c(mean = 0, sd = 1),
+      Male = c(mean = 0, sd = 1)
+    ),
+    subject_group_distribution = c(Female = .5, Male = .5),
+    asymptotic_size_sd = c(min = 0, max = 10),
+    min_calf_length = 3.5,
+    # To model break points between 1990 and 2015
+    group_size_shift_start_year = c(min = 1990, max = 2015)
+  ),
+  subject_info = whale_info
+)
+```
+
+
+$nbsp;
+
+
+Now run the sampler! When exploring data outputs, 1e4 or 1e5 can be good place for exploration, as this won't take too much time to run. We recommend using 1e6 for the final analysis since 1e6 MCMC samples is often enough to get a reasonable posterior effective sample size. 
+```{r}
+output_growth = sampler(niter = 1e4)
+```
+
+
+## View Sampler Outputs 
+Our saved `output_growth` contains all the posterior samples and summaries from the sampler. Note, that there are many objects stored in `output_growth`, so it is best to view specific selections rather than viewing all of the objects stored in `output_growth` at once, as this can take a very long time to load and cause R to freeze. 
+
+&nbsp;
+
+You can view the posterior summaries (mean, sd, etc.) of total body length (TL) for each individual (Subject) at each Timepoint (year). Note that the `lower` and `upper` represent the 95% highest posterior density intervals (HPDI) of the posterior distribution for TL.
+```{r}
+head(output_growth$summaries$objects)
+```
+
+
+&nbsp;
+
+We can view the posterior summaries (mean, sd, and lower and upper 95% HPDI) of the posterior distribution.
+```{r}
+output_growth$summaries$altimeters
+```
+
+We can view the posterior summaries of the pixel variance
+```{r}
+output_growth$pixel_error$summary
+```
+
+&nbsp;
+
+Let's view a preview of the posterior summaries of the growth curve parameters, including k, t0, A for males and females, and individual's birth year.
+```{r}
+output_growth$summaries$growth_curve[1:10,]
+```
+
+&nbsp;
+
+
+Let's now create a data frame with the posterior summaries for each individual's length. We will first save the total length output summaries, then save the birth year outputs, then combine both of these dataframes by `Subject`, and then join with `whale_info` to sync sex and AgeType Finally, we'll calculate the estimated age from the sample year from the estimated birth year. 
+```{r}
+# total length summary outputs for each subject
+sums_L <- output_growth$summaries$objects
+
+# birth year summary outputs for each subject
+birth_year <- output_growth$growth_curve$birth_year$summary %>% rename_with(~str_c("birth_year_", .), everything()) %>%
+  separate(birth_year_parameter, c("Subject", "Parameter"), sep = " ") %>% dplyr::select(!"Parameter")
+
+# combine total length and birth year summary outputs. Then join with whale info to get sex, AgeType. Finally, calculated new estimated age. 
+sum <- sums_L %>% 
+  left_join(birth_year, by = "Subject") %>% mutate(Year = as.integer(Timepoint)) %>%
+  left_join(whale_info %>% mutate(Subject = as.factor(Subject)) %>% rename(sex = Group), by = c("Subject", "Year")) %>% 
+  relocate(Year, .before = Timepoint) %>% 
+  mutate(Age_est_mean = Year - birth_year_mean, 
+         Age_est_lower = Year - birth_year_upper, 
+         Age_est_upper = Year - birth_year_lower)
+```
+
+&nbsp;
+
+## Plot Growth Curves
+We can view these results and plot the uncertainty associated with total body length (solid vertical line) and estimated age (dashed horizontal line).
+```{r, fig.dim = c(7, 5)}
+ggplot() + theme_bw() + 
+  geom_pointrange(data = sum, aes(x = Age_est_mean, y = mean, ymin = lower, ymax = upper)) +
+  geom_errorbarh(data = sum, 
+                 aes(xmin = Age_est_lower, xmax = Age_est_upper, y = mean), lty = 2) + 
+  xlab("estimated age") + ylab("total body length (m)") 
+
+```
+
+&nbsp; 
+
+Now we'll calculate the expected growth for male and females separately between ages 1-40. We'll first save the posterior samplers of the growth parameters and sex-based asymptotic lengths in a dataframe. We'll then calculate the expected length for male and females at each age using the Von Bertalanffy-Putter growth equation for each MCMC iteration. This will generate a distribution for the expected length at each age for male and females separately. We can then summarize these distributions to get the mean expected length and uncertainty as the 95% HPDI. 
+```{r}
+# create a dataframe of the output growth parameters
+pred_growth <- rbind(data.frame(t0 = output_growth$growth_curve$zero_length_age$samples,
+           k = output_growth$growth_curve$growth_rate$samples,
+           sex = "Female",
+           A = output_growth$growth_curve$group_asymptotic_size$samples[,1]),
+           data.frame(
+           t0 = output_growth$growth_curve$zero_length_age$samples,
+           k = output_growth$growth_curve$growth_rate$samples,
+           sex = "Male",
+           A = output_growth$growth_curve$group_asymptotic_size$samples[,2]))
+
+# write a loop to calculate the expected length for male and females between ages 1-40 for each MCMC iteration to create a distribution. Then calculate the mean and HPDIs from the distribution for each expected length.
+age_list <- seq(from  = 1, to = 40, by = 1)
+sex_list <- c("Male", "Female")
+
+age_df <- data.frame()
+full_df <- data.frame()
+
+for (s in sex_list){
+  s_x = s
+for (i in age_list){
+  yr0 = i
+  growth_filt = pred_growth %>% filter(sex == s_x)
+  Exp.L = growth_filt$A * (1-exp(-growth_filt$k * (yr0 - growth_filt$t0)))
+  Exp.L_mean = mean(Exp.L)
+  Exp.L_lower = HPDinterval(mcmc(Exp.L))[1]
+  Exp.L_upper = HPDinterval(mcmc(Exp.L))[2]
+  temp_df <- data.frame(age = yr0, sex = s_x, 
+                        Exp.L_mean, Exp.L_lower = Exp.L_lower, Exp.L_upper = Exp.L_upper) 
+  age_df <- rbind(age_df, temp_df)
+}
+  full_df <- rbind(full_df, age_df)
+}
+
+```
+
+
+$nbsp; 
+
+
+Now we can plot the results 
+```{r, fig.dim = c(7, 5)}
+ggplot() + theme_bw() + 
+  xlab("estimated age") + ylab("total body length (m)") + 
+  geom_ribbon(data = full_df, aes(x = age, ymin = Exp.L_lower, ymax = Exp.L_upper, fill = sex), alpha = 0.4) + 
+  geom_line(data = full_df, aes(x = age, y = Exp.L_mean, color = sex)) +
+  scale_color_manual(values = c(Female = "lightblue3", Male = "darkorange")) +
+  scale_fill_manual(values = c(Female = "lightblue3", Male = "darkorange")) +
+  geom_pointrange(data = sum %>% filter(!is.na(sex)),
+                  aes(x = Age_est_mean, y = mean, ymin = lower, ymax = upper, color = sex)) +
+  geom_errorbarh(data = sum, 
+                 aes(xmin = Age_est_lower, xmax = Age_est_upper, y = mean, color = sex), lty = 3) 
+  
+```
+
+&nbsp;
+
+Note, you can create custom samplers to use different growth equations (i.e., Gompertz, etc.). See  [Xcertainty](https://github.com/MMI-CODEX/Xcertainty/tree/main) to learn more. 

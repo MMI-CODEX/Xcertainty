@@ -1,0 +1,379 @@
+---
+title: "Xcertainty informative priors"
+output: rmarkdown::html_vignette
+description: >
+   Here we'll show an example of using informative priors in the Xcertainty indpendent_length_sampler(). 
+vignette: >
+  %\VignetteIndexEntry{Xcertainty informative priors}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+fontsize: 13pt 
+author: "KC Bierlich & Josh Hewitt, CODEX"
+date: "2024-08-30"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Introduction
+Before moving forward, be sure to first check out the [Xcertainty](Xcertainty.html) vignette on how to use the `independent_length_sampler()` with non-informative priors for a proper introduction on how to use `Xcertainty`. 
+
+You should always first start with using non-informative priors. In some cases, assigning informative priors can be helpful, especially with low-cost off-the-shelf drones that are more susceptible to high errors and when the model is overparameterized. For this vignette, we'll focus on how to use informative priors using the `independent_length_sampler()`. We will first show an example using non-informative priors and how to identify faulty posterior outputs. We'll then show some steps for trouble shooting and when informative priors may be appropriate to use. We'll then build a sampler using informative priors and view the outputs. 
+
+&nbsp;
+
+
+## Example: Gray whale body length
+We will use the same small example dataset consisting of body length and body width measurements of Pacific Coast Feeding Group (PCFG) gray whales from the [Xcertainty](Xcertainty.html) vignette. This time, we will use measurement data collected with a DJI Phantom 4 Pro (P4P, n = 5 individuals). The P4P contains only a barometer (no LiDAR altimeter) for estimating altitude, which are prone to greater errors and can often generate outliers. 
+
+Note, that wide-angle lenses, such as the 8.8 mm focal length lens on the P4P, are susceptible to barrel distortion. Many manufacturers use internal processing to automatically correct for the effects of barrel distortion. We lab tested the field of view (FOV) for the P4P following Segre (in prep) and calculated an adjusted focal length that matches the corrections from the internal processing. We thus will use this adjusted focal length (`Focal_Length_adj`) in the sampler. 
+
+We'll first run the P4P data using non-informative priors, view the faulty outputs, troubleshoot, and then run the sampler again using informative priors. 
+
+
+&nbsp;
+
+We'll first load the Xcertainty package, as well as other packages we will use throughout this example.
+```{r, echo=TRUE, warning=FALSE}
+library(Xcertainty)
+
+library(tidyverse)
+library(ggdist)
+```
+
+
+### Calibration Objects
+First we'll load and prepare the calibration data, which is from [Bierlich et al., 2024](https://doi.org/10.1139/dsa-2023-0051). Note that "CO" here stands for "Calibration Object" used for training data, and "CO.L" is the true length of the CO (1 m) and "Lpix" is the photogrammetric measurement of the CO in pixels. Each UAS has a unique CO.ID so that the training data and observation (whale) data can be linked. We will filter to use CO data from the P4P drone.
+```{r}
+# load calibration measurement data
+data("co_data")
+
+# sample size for both drones
+table(co_data$uas)
+
+# filter for P4P drone
+co_data_p4p <- co_data %>% filter(uas == "P4P")
+```
+
+
+Next, well format the data using `parse_observations()`.
+```{r}
+calibration_data = parse_observations(
+  x = co_data_p4p, 
+  subject_col = 'CO.ID',
+  meas_col = 'Lpix', 
+  tlen_col = 'CO.L', 
+  image_col = 'image', 
+  barometer_col = 'Baro_Alt',
+  laser_col = 'Laser_Alt', 
+  flen_col = 'Focal_Length_adj', 
+  iwidth_col = 'Iw', 
+  swidth_col = 'Sw',
+  uas_col = 'uas'
+)
+```
+
+This creates a list of three dataframes:   
+    * `calibration_data$pixel_counts`.   
+    * `calibration_data$training_objects`.    
+    * `calibration_data$image_info`.    
+ 
+
+### Gray whale measurements
+Now we'll load and prepare the gray whale measurement data. The column 'whale_ID' denotes the unique individual. Note, some individuals have multiple images --  Xcertainty incorporates measurements across images for an individual to produce a single posterior distribution for the measurement of that individual. For example, multiple body length measurements from different images of an individual will produce a single posterior distribution of body length for that individual. 
+
+As in the [Xcertainty](Xcertainty.html) vignette, we will select body widths between 20-70% of body length for estimating body condition. We'll save the column names of these widths as their own object.  
+
+For this example, we will only use whale measurements collected using the P4P drone.
+```{r}
+# load gray whale measurement data
+data("gw_data")
+
+# filter for I2 drone and select specific widths to include for estimating body condition (20-70%)
+gw_measurements <- gw_data %>% filter(uas == "P4P") %>% 
+  select(!c("TL_w05.00_px", "TL_w10.00_px", "TL_w15.00_px", 
+            "TL_w75.00_px", "TL_w80.00_px", "TL_w85.00_px", "TL_w90.00_px", "TL_w95.00_px"))
+
+# identify the width columns in the dataset
+width_names = grep(
+  pattern = 'TL_w\\_*', 
+  x = colnames(gw_measurements),
+  value = TRUE
+)
+
+# view the data, note that some individuals have multiple images.
+gw_measurements
+```
+
+
+Next, we'll use `parse_observations()` to prepare the whale data. Since `Xcertainty` incorporates errors associated with both a LiDAR altimeter and a barometer into the output measurement, the input measurements must be in pixels. In our example dataset of gray whales, measurements are already in pixels. If measurements in a dataframe are in meters, they can easily be converted into pixels using `alt_conversion_col` to assign which altitude column should be used to "back calculate" measurements in meters into pixels. For example, use `alt_conversion_col = 'Baro_Alt` if the measurements used the barometer to convert measurements into meters. 
+
+&nbsp;
+
+Also, note that we assign the measurement column (`meas_col`) for TL and the widths between 20-70% that we saved as "width_names". 
+```{r}
+# parse field study
+whale_data = parse_observations(
+  x = gw_measurements, 
+  subject_col = 'whale_ID',
+  meas_col = c('TL_px', width_names),
+  image_col = 'image', 
+  barometer_col = 'Baro_Alt',
+  laser_col = 'Laser_Alt', 
+  flen_col = 'Focal_Length_adj', 
+  iwidth_col = 'Iw', 
+  swidth_col = 'Sw', 
+  uas_col = 'uas'
+  #alt_conversion_col = 'altitude'
+)
+```
+
+  
+This creates a list of three dataframes:   
+ * `whale_data$pixel_counts`.   
+ * `whale_data$training_objects`.    
+ * `whale_data$image_info`.  
+
+
+## Build sampler (non-informative priors)
+Now we will build a sampler using non-informative priors, the same as in the [Xcertainty](Xcertainty.html) vignette. This includes setting the altitudes (`image_altitude`) and object length measurements (`object_lengths`) to cover an overly wide range for our target species.  
+```{r}
+sampler = independent_length_sampler(
+  data = combine_observations(calibration_data, whale_data),
+  priors = list(
+    image_altitude = c(min = 0.1, max = 130),
+    altimeter_bias = rbind(
+      data.frame(altimeter = 'Barometer', mean = 0, sd = 1e2),
+      data.frame(altimeter = 'Laser', mean = 0, sd = 1e2)
+    ),
+    altimeter_variance = rbind(
+      data.frame(altimeter = 'Barometer', shape = .01, rate = .01),
+      data.frame(altimeter = 'Laser', shape = .01, rate = .01)
+    ),
+    altimeter_scaling = rbind(
+      data.frame(altimeter = 'Barometer', mean = 1, sd = 1e1),
+      data.frame(altimeter = 'Laser', mean = 1, sd = 1e1)
+    ),
+    pixel_variance = c(shape = .01, rate = .01),
+    object_lengths = c(min = .01, max = 20)
+  )
+)
+```
+
+
+## Run Sampler
+Now we can run the sampler. Note, that "niter" refers to the number of iterations. When exploring data outputs, 1e4 or 1e5 can be good place for exploration, as this won't take too much time to run. We recommend using 1e6 for the final analysis since 1e6 MCMC samples is often enough to get a reasonable posterior effective sample size. In our example, we do not have that many individuals so we'll stick with 1e6.  
+```{r}
+# run sampler
+output = sampler(niter = 1e6, thin = 10)
+```
+
+
+
+## View Sampler Outputs (TL and widths) 
+Our saved `output` contains all the posterior samples and summaries of all training data and length and width measurements from the sampler. Note, that there are many objects stored in `output`, so it is best to view specific selections rather than viewing all of the objects stored in `output` at once, as this can take a very long time to load and cause R to freeze. 
+
+&nbsp;
+
+We can view the posterior summaries (mean, sd, etc.) for each altimeter. Note that the `lower` and `upper` represent the 95% highest posterior density intervals (HPDI) of the posterior distribution (similar to credible intervals).
+```{r}
+output$summaries$altimeters
+```
+
+&nbsp;
+
+Note that the bias and variance is very large. 
+
+When we view and compare the posterior outputs for each image's altitude compared to the observed altitude from the barometer (dashed line represents 1:1), the altitudes are way off with extremely large uncertainty.
+```{r, fig.dim = c(7, 5)}
+output$summaries$images %>% left_join(co_data %>% rename(Image = image), by = "Image") %>%
+  ggplot() + theme_bw() + 
+  geom_pointrange(aes(x = Baro_Alt, y = mean, ymin = lower, ymax = upper), color = "blue") +
+  geom_abline(slope = 1, intercept = 0, lty = 2) + 
+  ylab("posterior altitude (m)") + xlab("observed altitude (m)")
+
+```
+
+&nbsp;
+
+We also see that the pixel variance from the training data is a bit outrageous.
+```{r}
+output$pixel_error$summary
+```
+
+
+&nbsp;
+
+When we view the posterior summaries (mean, sd, and upper and lower 95% HPDI) for all measurements of each individual whale. We first notice that these measurements are unrealistically large. For example, most PCFG gray whales are between 8-13 m, and our TL output is >18 m! The body widths are also about 1 m larger than they should be.
+```{r}
+head(output$summaries$objects)
+```
+
+&nbsp;
+
+Let's check if the same problem exists for the total body length (TL) for all the other whales and make a plot to view the results, with black dots representing the mean of the posterior distribution for total body length and the black bars around each dot representing the uncertainty, as 95% HPDI.  
+```{r}
+output$summaries$objects %>% filter(Measurement == "TL_px")
+```
+
+
+```{r, fig.dim = c(7, 5)}
+output$summaries$objects %>% filter(Measurement == "TL_px") %>% 
+  ggplot() + theme_bw() + 
+  geom_pointrange(aes(x = Subject, y = mean, ymin =lower, ymax = upper)) + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 1, hjust=1)) + 
+  ylab("Total body length (m)") 
+```
+
+&nbsp;
+
+Yep, all over 18 m with high uncertainty! So now we need to trouble shoot a bit to figure out what is going on.
+
+&nbsp;
+
+## Trouble Shooting
+Let's first confirm that the observed photogrammetric measurements are realistic. Since our measurements are in pixels, we'll convert them to meters to have a look. We can see that the observed body length measurements seem reasonable. 
+```{r}
+gw_data %>% filter(uas == "P4P") %>% 
+  mutate(TL_m= Baro_Alt/Focal_Length_adj * Sw/Iw * TL_px) %>% select(c(whale_ID, TL_m))
+```
+
+Let's next make sure there are no outliers in the altitude from the training data. If so, we can try removing them. We'll use the known size of the calibration object (CO.L) to calculate the "true", or expected, altitude, and then calculate the percent difference between the observed vs. true altitude. From looking at the data, it does not appear that there are extreme outliers. 
+```{r, fig.dim = c(7, 5)}
+co_data_p4p %>% 
+  mutate(alt_true = (CO.L*Focal_Length_adj)/((Sw/Iw)*Lpix),
+         perDiff = ((Baro_Alt - alt_true)/alt_true)*100) %>%
+  ggplot() + theme_bw() + 
+  geom_point(aes(x = Baro_Alt, y = alt_true, color = perDiff)) + 
+  geom_abline(intercept = 0, slope =1, lty = 2)
+```
+
+&nbsp;
+
+So now let's take a step back and re-run the same calibration sampler without the whale measurements to see if we can isolate the problem. 
+
+&nbsp;
+
+First we'll rebuild the sampler, but exclude the whale measurements.
+```{r}
+cal_sampler = calibration_sampler(
+  data = calibration_data,
+  priors = list(
+    image_altitude = c(min = 0.1, max = 130),
+    altimeter_bias = rbind(
+      data.frame(altimeter = 'Barometer', mean = 0, sd = 1e2),
+      data.frame(altimeter = 'Laser', mean = 0, sd = 1e2)
+    ),
+    altimeter_variance = rbind(
+      data.frame(altimeter = 'Barometer', shape = .01, rate = .01),
+      data.frame(altimeter = 'Laser', shape = .01, rate = .01)
+    ),
+    altimeter_scaling = rbind(
+      data.frame(altimeter = 'Barometer', mean = 1, sd = 1e1),
+      data.frame(altimeter = 'Laser', mean = 1, sd = 1e1)
+    ),
+    pixel_variance = c(shape = .01, rate = .01),
+    object_lengths = c(min = .01, max = 20)
+  ),
+  # set to false to return sampler function
+  package_only = FALSE
+)
+```
+
+
+&nbsp;
+
+Next, we run the calibration sampler
+```{r}
+output_calibration = cal_sampler(niter = 1e6, thin = 10)
+```
+
+&nbsp;
+
+Now we can view the outputs. Here we can confirm that the altimeter errors appear to be reasonable when we fit the model to the calibration data only. This suggests that the issue with the peculiarly large output measurements with high uncertainty are somehow related to the whale observations themselves, but, as we confirmed above, the observed whale measurements also seem reasonable.
+```{r}
+output_calibration$altimeters$`P4P Barometer`$summary
+```
+
+
+&nbsp;
+
+## Informative priors
+In this case, we likely have an overparameterized model causing instability. When we compare the priors used in  `cal_sampler` to the results from the `output_calibration`, we can see that the 95% HPDIs overlap with 0 for bias and 1 for scaling, suggesting that there is no strong evidence of bias or scaling concerns. Following Occam's razor, it is then reasonable to remove these parameters from the model, particularly to improve computational stability since we demonstrated above that the full model yields faulty results.   
+
+So now we will fit the model with informative priors for altimeter_bias and altimeter_scaling. The informative priors essentially force the model to run with an assumption that altimeter_bias = 0, and altimeter_scaling = 1, which borrows justification from linear regression model selection arguments. We will also remove `altimeter = 'laser'` since no LiDAR was used on the P4P. 
+```{r}
+sampler = independent_length_sampler(
+  data = combine_observations(calibration_data, whale_data),
+  priors = list(
+    image_altitude = c(min = 0.1, max = 130),
+    altimeter_bias = rbind(
+      #data.frame(altimeter = 'Barometer', mean = 0, sd = 1e-2)
+      data.frame(altimeter = 'Barometer', mean = 0, sd = 1)
+    ),
+    altimeter_variance = rbind(
+      data.frame(altimeter = 'Barometer', shape = .01, rate = .01)
+    ),
+    altimeter_scaling = rbind(
+      #data.frame(altimeter = 'Barometer', mean = 1, sd = 1e-2)
+      data.frame(altimeter = 'Barometer', mean = 1, sd = 0.1)
+    ),
+    pixel_variance = c(shape = .01, rate = .01),
+    object_lengths = c(min = .01, max = 20)
+  ),
+  # set to false to return sampler function
+  package_only = FALSE
+)
+
+```
+
+
+&nbsp;
+
+Run it!
+```{r}
+output_informative = sampler(niter = 1e6, thin = 10)
+```
+
+&nbsp;
+
+Now let's check results.  
+
+We confirm that bias and scaling were both held constant to 0 and 1, respectively.
+```{r}
+output_informative$altimeters$`P4P Barometer`$summary
+```
+
+
+&nbsp;
+
+Outputs look more reasonable!
+```{r}
+head(output_informative$summaries$objects)
+```
+
+We also can confirm that the measurements for total body lengths for rest of the whales also looks reasonable.
+```{r}
+output_informative$summaries$objects %>% filter(Measurement == "TL_px")
+```
+
+
+
+Now let's plot total body length with associated uncertainty for each individual. The lengths look much more reasonable now. There is large uncertainty around each point, but this is expected, as the P4P is susceptible to high error.
+```{r, fig.dim = c(7, 5)}
+output_informative$summaries$objects %>% filter(Measurement == "TL_px") %>% 
+  ggplot() + theme_bw() + 
+  geom_pointrange(aes(x = Subject, y = mean, ymin =lower, ymax = upper)) + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 1, hjust=1)) + 
+  ylab("Total body length (m)") 
+```
+
+
+&nbsp;
+
+So now these measurements can be used in analysis. We can also use `body_condition()` to calculate different body condition metrics, such as body area index (BAI), body volume, surface area, and standardized widths. See the [Xcertainty](Xcertainty.html) vignette for an example on how to use `body_condition()`.
+
+
+

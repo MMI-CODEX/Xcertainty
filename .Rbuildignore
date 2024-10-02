@@ -8,6 +8,6 @@
 CODE_OF_CONDUCT.md
 cran-comments.md
 ^doc$
-^Meta$
 ^examples
 README.md
+^Meta$
