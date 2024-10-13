@@ -14,7 +14,10 @@ author: "KC Bierlich & Josh Hewitt, CODEX"
 date: "2024-10-13"
 ---
 
-
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(dev = "png", cache = TRUE)
+```
 
 
 ## Introduction
@@ -36,8 +39,7 @@ We'll first run the P4P data using non-informative priors, view the faulty outpu
 &nbsp;
 
 We'll first load the Xcertainty package, as well as other packages we will use throughout this example.
-
-```r
+```{r, echo=TRUE, warning=FALSE}
 library(Xcertainty)
 
 library(tidyverse)
@@ -47,30 +49,20 @@ library(ggdist)
 
 ### Calibration Objects
 First we'll load and prepare the calibration data, which is from [Bierlich et al., 2024](https://doi.org/10.1139/dsa-2023-0051). Note that "CO" here stands for "Calibration Object" used for training data, and "CO.L" is the true length of the CO (1 m) and "Lpix" is the photogrammetric measurement of the CO in pixels. Each UAS has a unique CO.ID so that the training data and observation (whale) data can be linked. We will filter to use CO data from the P4P drone.
-
-```r
+```{r}
 # load calibration measurement data
 data("co_data")
 
 # sample size for both drones
 table(co_data$uas)
-```
 
-```
-## 
-##  I2 P4P 
-##  49  69
-```
-
-```r
 # filter for P4P drone
 co_data_p4p <- co_data %>% filter(uas == "P4P")
 ```
 
 
 Next, well format the data using `parse_observations()`.
-
-```r
+```{r}
 calibration_data = parse_observations(
   x = co_data_p4p, 
   subject_col = 'CO.ID',
@@ -98,8 +90,7 @@ Now we'll load and prepare the gray whale measurement data. The column 'whale_ID
 As in the [Xcertainty](Xcertainty.html) vignette, we will select body widths between 20-70% of body length for estimating body condition. We'll save the column names of these widths as their own object.  
 
 For this example, we will only use whale measurements collected using the P4P drone.
-
-```r
+```{r}
 # load gray whale measurement data
 data("gw_data")
 
@@ -119,30 +110,13 @@ width_names = grep(
 gw_measurements
 ```
 
-```
-## # A tibble: 7 × 26
-##   whale_ID image     year   DOY uas   Focal…¹ Focal…²    Sw    Iw Baro_…³ Launc…⁴ Baro_…⁵ Laser…⁶ CO.ID TL_px TL_w2…⁷ TL_w2…⁸ TL_w3…⁹ TL_w3…˟ TL_w4…˟ TL_w4…˟
-##   <chr>    <chr>    <int> <int> <chr>   <dbl>   <dbl> <dbl> <int>   <dbl>   <dbl>   <dbl>   <dbl> <chr> <dbl>   <dbl>   <dbl>   <dbl>   <dbl>   <dbl>   <dbl>
-## 1 GW_02    image_0…  2019   249 P4P       8.8     9.2  13.2  3840    25.6    1.72    27.3      NA CO_P… 1185.    151.    169.    197.    214.    230.    227.
-## 2 GW_02    image_0…  2019   249 P4P       8.8     9.2  13.2  3840    25.6    1.72    27.3      NA CO_P… 1203.    151.    181.    202.    214.    220.    222.
-## 3 GW_05    image_0…  2019   203 P4P       8.8     9.2  13.2  3840    25.5    1.72    27.2      NA CO_P…  986.    115.    130.    148.    161.    166.    169.
-## 4 GW_05    image_0…  2019   203 P4P       8.8     9.2  13.2  3840    25.5    1.72    27.2      NA CO_P…  957.    125.    140.    158.    171.    169.    156.
-## 5 GW_07    image_1…  2019   280 P4P       8.8     9.2  13.2  3840    24.7    1.72    26.4      NA CO_P… 1023.    121.    137.    155.    161.    168.    159.
-## 6 GW_08    image_0…  2019   280 P4P       8.8     9.2  13.2  3840    25.5    1.72    27.2      NA CO_P… 1020.    123.    132.    144.    147.    147.    138.
-## 7 GW_09    image_0…  2019   180 P4P       8.8     9.2  13.2  3840    25.5    1.72    27.2      NA CO_P…  928.    104.    116.    131.    141.    145.    146.
-## # … with 5 more variables: TL_w50.00_px <dbl>, TL_w55.00_px <dbl>, TL_w60.00_px <dbl>, TL_w65.00_px <dbl>, TL_w70.00_px <dbl>, and abbreviated variable
-## #   names ¹​Focal_Length, ²​Focal_Length_adj, ³​Baro_raw, ⁴​Launch_Ht, ⁵​Baro_Alt, ⁶​Laser_Alt, ⁷​TL_w20.00_px, ⁸​TL_w25.00_px, ⁹​TL_w30.00_px, ˟​TL_w35.00_px,
-## #   ˟​TL_w40.00_px, ˟​TL_w45.00_px
-```
-
 
 Next, we'll use `parse_observations()` to prepare the whale data. Since `Xcertainty` incorporates errors associated with both a LiDAR altimeter and a barometer into the output measurement, the input measurements must be in pixels. In our example dataset of gray whales, measurements are already in pixels. If measurements in a dataframe are in meters, they can easily be converted into pixels using `alt_conversion_col` to assign which altitude column should be used to "back calculate" measurements in meters into pixels. For example, use `alt_conversion_col = 'Baro_Alt` if the measurements used the barometer to convert measurements into meters. 
 
 &nbsp;
 
 Also, note that we assign the measurement column (`meas_col`) for TL and the widths between 20-70% that we saved as "width_names". 
-
-```r
+```{r}
 # parse field study
 whale_data = parse_observations(
   x = gw_measurements, 
@@ -168,8 +142,7 @@ This creates a list of three dataframes:
 
 ## Build sampler (non-informative priors)
 Now we will build a sampler using non-informative priors, the same as in the [Xcertainty](Xcertainty.html) vignette. This includes setting the altitudes (`image_altitude`) and object length measurements (`object_lengths`) to cover an overly wide range for our target species.  
-
-```r
+```{r}
 sampler = independent_length_sampler(
   data = combine_observations(calibration_data, whale_data),
   priors = list(
@@ -192,75 +165,12 @@ sampler = independent_length_sampler(
 )
 ```
 
-```
-## Joining with `by = join_by(altimeter)`
-## Joining with `by = join_by(altimeter)`
-## Joining with `by = join_by(altimeter)`
-## Joining with `by = join_by(UAS, altimeter)`
-## Defining model
-## Building model
-## Setting data and initial values
-## Running calculate on model [Note] Any error reports that follow may simply reflect missing values in model variables.
-## Checking model sizes and dimensions
-## Compiling [Note] This may take a minute. [Note] Use 'showCompilerOutput = TRUE' to see C++ compilation details.
-```
-
-```
-## ===== Monitors =====
-## thin = 1: altimeter_bias, altimeter_scaling, altimeter_variance, image_altitude, object_length, pixel_variance
-## ===== Samplers =====
-## RW sampler (117)
-##   - image_altitude[]  (57 elements)
-##   - object_length[]  (60 elements)
-## conjugate sampler (7)
-##   - altimeter_bias[]  (2 elements)
-##   - altimeter_scaling[]  (2 elements)
-##   - altimeter_variance[]  (2 elements)
-##   - pixel_variance
-```
-
-```
-## Compiling
-##   [Note] This may take a minute.
-##   [Note] Use 'showCompilerOutput = TRUE' to see C++ compilation details.
-```
-
 
 ## Run Sampler
 Now we can run the sampler. Note, that "niter" refers to the number of iterations. When exploring data outputs, 1e4 or 1e5 can be good place for exploration, as this won't take too much time to run. We recommend using 1e6 for the final analysis since 1e6 MCMC samples is often enough to get a reasonable posterior effective sample size. In our example, we do not have that many individuals so we'll stick with 1e6.  
-
-```r
+```{r}
 # run sampler
 output = sampler(niter = 1e6, thin = 10)
-```
-
-```
-## Sampling
-```
-
-```
-## |-------------|-------------|-------------|-------------|
-## |-------------------------------------------------------|
-```
-
-```
-## Extracting altimeter output
-```
-
-```
-## Extracting image output
-```
-
-```
-## Extracting pixel error output
-```
-
-```
-## Extracting object output
-```
-
-```
-## Extracting summaries
 ```
 
 
@@ -271,19 +181,8 @@ Our saved `output` contains all the posterior samples and summaries of all train
 &nbsp;
 
 We can view the posterior summaries (mean, sd, etc.) for each altimeter. Note that the `lower` and `upper` represent the 95% highest posterior density intervals (HPDI) of the posterior distribution (similar to credible intervals).
-
-```r
+```{r}
 output$summaries$altimeters
-```
-
-```
-##   UAS altimeter parameter       mean         sd      lower    upper      ESS   PSS
-## 1  I2 Barometer      bias -0.7127096 1.58932014 -3.8031033 2.455798 2000.290 50001
-## 2  I2 Barometer  variance  5.3992663 1.13764314  3.3858031 7.656946 8348.773 50001
-## 3  I2 Barometer   scaling  1.0022806 0.04129523  0.9214487 1.083462 1481.785 50001
-## 4  I2     Laser      bias -0.4752213 1.63098898 -3.6564912 2.749217 2750.569 50001
-## 5  I2     Laser  variance  6.0715704 1.31790463  3.7847879 8.729066 3002.456 50001
-## 6  I2     Laser   scaling  0.9964931 0.04213887  0.9135947 1.078784 1982.081 50001
 ```
 
 &nbsp;
@@ -291,81 +190,45 @@ output$summaries$altimeters
 Note that the bias and variance is very large. 
 
 When we view and compare the posterior outputs for each image's altitude compared to the observed altitude from the barometer (dashed line represents 1:1), the altitudes are way off with extremely large uncertainty.
-
-```r
+```{r, poster_vs_obs_alt_P4P, fig.dim = c(7, 5)}
 output$summaries$images %>% left_join(co_data %>% rename(Image = image), by = "Image") %>%
   ggplot() + theme_bw() + 
   geom_pointrange(aes(x = Baro_Alt, y = mean, ymin = lower, ymax = upper), color = "blue") +
   geom_abline(slope = 1, intercept = 0, lty = 2) + 
   ylab("posterior altitude (m)") + xlab("observed altitude (m)")
-```
 
 ```
-## Warning: Removed 8 rows containing missing values (`geom_pointrange()`).
-```
-
-![plot of chunk poster_vs_obs_alt_P4P](figure/poster_vs_obs_alt_P4P-1.png)
 
 &nbsp;
 
 We also see that the pixel variance from the training data is a bit outrageous.
-
-```r
+```{r}
 output$pixel_error$summary
-```
-
-```
-##   error parameter     mean       sd    lower    upper      ESS   PSS
-## 1 pixel  variance 18.81583 3.722385 12.22056 26.34165 17653.12 50001
 ```
 
 
 &nbsp;
 
 When we view the posterior summaries (mean, sd, and upper and lower 95% HPDI) for all measurements of each individual whale. We first notice that these measurements are unrealistically large. For example, most PCFG gray whales are between 8-13 m, and our TL output is >18 m! The body widths are also about 1 m larger than they should be.
-
-```r
+```{r}
 head(output$summaries$objects)
-```
-
-```
-##   Subject  Measurement Timepoint parameter      mean         sd     lower     upper      ESS   PSS
-## 1   GW_01        TL_px         1    length 12.555545 0.48704796 11.575160 13.505501 243.1464 50001
-## 2   GW_01 TL_w20.00_px         1    length  1.561236 0.06995057  1.422562  1.698373 358.1524 50001
-## 3   GW_01 TL_w25.00_px         1    length  1.920606 0.08238801  1.759192  2.084941 325.5866 50001
-## 4   GW_01 TL_w30.00_px         1    length  2.064774 0.08760304  1.894536  2.240992 294.6102 50001
-## 5   GW_01 TL_w35.00_px         1    length  2.129054 0.08953702  1.952838  2.306796 307.0597 50001
-## 6   GW_01 TL_w40.00_px         1    length  2.129249 0.08961719  1.953301  2.307159 301.6908 50001
 ```
 
 &nbsp;
 
 Let's check if the same problem exists for the total body length (TL) for all the other whales and make a plot to view the results, with black dots representing the mean of the posterior distribution for total body length and the black bars around each dot representing the uncertainty, as 95% HPDI.  
-
-```r
+```{r}
 output$summaries$objects %>% filter(Measurement == "TL_px")
 ```
 
-```
-##   Subject Measurement Timepoint parameter      mean        sd     lower    upper       ESS   PSS
-## 1   GW_01       TL_px         1    length 12.555545 0.4870480 11.575160 13.50550 243.14637 50001
-## 2   GW_03       TL_px         1    length  8.407687 0.2183205  7.986385  8.83699 675.38916 50001
-## 3   GW_04       TL_px         1    length 11.175770 0.6021496  9.960727 12.35394  86.85540 50001
-## 4   GW_06       TL_px         1    length 10.139998 0.5692372  9.059978 11.37050  74.45342 50001
-## 5   GW_10       TL_px         1    length  9.662577 0.2231506  9.233452 10.09427 594.96188 50001
-```
 
-
-
-```r
+```{r, TL_output_wonky, fig.dim = c(7, 5)}
 output$summaries$objects %>% filter(Measurement == "TL_px") %>% 
   ggplot() + theme_bw() + 
   geom_pointrange(aes(x = Subject, y = mean, ymin =lower, ymax = upper)) + 
   theme(axis.text.x = element_text(angle = 90, vjust = 1, hjust=1)) + 
   ylab("Total body length (m)") 
 ```
-
-![plot of chunk TL_output_wonky](figure/TL_output_wonky-1.png)
 
 &nbsp;
 
@@ -375,28 +238,13 @@ Yep, all over 18 m with high uncertainty! So now we need to trouble shoot a bit 
 
 ## Trouble Shooting
 Let's first confirm that the observed photogrammetric measurements are realistic. Since our measurements are in pixels, we'll convert them to meters to have a look. We can see that the observed body length measurements seem reasonable. 
-
-```r
+```{r}
 gw_data %>% filter(uas == "P4P") %>% 
   mutate(TL_m= Baro_Alt/Focal_Length_adj * Sw/Iw * TL_px) %>% select(c(whale_ID, TL_m))
 ```
 
-```
-## # A tibble: 7 × 2
-##   whale_ID  TL_m
-##   <chr>    <dbl>
-## 1 GW_02    12.1 
-## 2 GW_02    12.3 
-## 3 GW_05    10.0 
-## 4 GW_05     9.74
-## 5 GW_07    10.1 
-## 6 GW_08    10.4 
-## 7 GW_09     9.44
-```
-
 Let's next make sure there are no outliers in the altitude from the training data. If so, we can try removing them. We'll use the known size of the calibration object (CO.L) to calculate the "true", or expected, altitude, and then calculate the percent difference between the observed vs. true altitude. From looking at the data, it does not appear that there are extreme outliers. 
-
-```r
+```{r, baro_vs_true_alt, fig.dim = c(7, 5)}
 co_data_p4p %>% 
   mutate(alt_true = (CO.L*Focal_Length_adj)/((Sw/Iw)*Lpix),
          perDiff = ((Baro_Alt - alt_true)/alt_true)*100) %>%
@@ -405,8 +253,6 @@ co_data_p4p %>%
   geom_abline(intercept = 0, slope =1, lty = 2)
 ```
 
-![plot of chunk baro_vs_true_alt](figure/baro_vs_true_alt-1.png)
-
 &nbsp;
 
 So now let's take a step back and re-run the same calibration sampler without the whale measurements to see if we can isolate the problem. 
@@ -414,8 +260,7 @@ So now let's take a step back and re-run the same calibration sampler without th
 &nbsp;
 
 First we'll rebuild the sampler, but exclude the whale measurements.
-
-```r
+```{r}
 cal_sampler = calibration_sampler(
   data = calibration_data,
   priors = list(
@@ -440,85 +285,19 @@ cal_sampler = calibration_sampler(
 )
 ```
 
-```
-## Joining with `by = join_by(altimeter)`
-## Joining with `by = join_by(altimeter)`
-## Joining with `by = join_by(altimeter)`
-## Joining with `by = join_by(UAS, altimeter)`
-## Defining model
-## Building model
-## Setting data and initial values
-## Running calculate on model [Note] Any error reports that follow may simply reflect missing values in model variables.
-## Checking model sizes and dimensions
-## Compiling [Note] This may take a minute. [Note] Use 'showCompilerOutput = TRUE' to see C++ compilation details.
-```
-
-```
-## ===== Monitors =====
-## thin = 1: altimeter_bias, altimeter_scaling, altimeter_variance, image_altitude, pixel_variance
-## ===== Samplers =====
-## RW sampler (69)
-##   - image_altitude[]  (69 elements)
-## conjugate sampler (4)
-##   - altimeter_bias[]  (1 element)
-##   - altimeter_scaling[]  (1 element)
-##   - altimeter_variance[]  (1 element)
-##   - pixel_variance
-```
-
-```
-## Compiling
-##   [Note] This may take a minute.
-##   [Note] Use 'showCompilerOutput = TRUE' to see C++ compilation details.
-```
-
 
 &nbsp;
 
 Next, we run the calibration sampler
-
-```r
+```{r}
 output_calibration = cal_sampler(niter = 1e6, thin = 10)
-```
-
-```
-## Sampling
-```
-
-```
-## |-------------|-------------|-------------|-------------|
-## |-------------------------------------------------------|
-```
-
-```
-## Extracting altimeter output
-```
-
-```
-## Extracting image output
-```
-
-```
-## Extracting pixel error output
-```
-
-```
-## Extracting summaries
 ```
 
 &nbsp;
 
 Now we can view the outputs. Here we can confirm that the altimeter errors appear to be reasonable when we fit the model to the calibration data only. This suggests that the issue with the peculiarly large output measurements with high uncertainty are somehow related to the whale observations themselves, but, as we confirmed above, the observed whale measurements also seem reasonable.
-
-```r
+```{r}
 output_calibration$altimeters$`P4P Barometer`$summary
-```
-
-```
-##   UAS altimeter parameter      mean         sd      lower    upper       ESS   PSS
-## 1 P4P Barometer      bias 1.6728798 2.00933678 -2.1906832 5.706137  3989.429 50001
-## 2 P4P Barometer  variance 4.7770209 0.93046863  3.1518823 6.670030 36761.666 50001
-## 3 P4P Barometer   scaling 0.9658329 0.07899958  0.8145092 1.125641  4046.854 50001
 ```
 
 
@@ -528,8 +307,7 @@ output_calibration$altimeters$`P4P Barometer`$summary
 In this case, we likely have an overparameterized model causing instability. When we compare the priors used in  `cal_sampler` to the results from the `output_calibration`, we can see that the 95% HPDIs overlap with 0 for bias and 1 for scaling, suggesting that there is no strong evidence of bias or scaling concerns. Following Occam's razor, it is then reasonable to remove these parameters from the model, particularly to improve computational stability since we demonstrated above that the full model yields faulty results.   
 
 So now we will fit the model with informative priors for altimeter_bias and altimeter_scaling. The informative priors essentially force the model to run with an assumption that altimeter_bias = 0, and altimeter_scaling = 1, which borrows justification from linear regression model selection arguments. We will also remove `altimeter = 'laser'` since no LiDAR was used on the P4P. 
-
-```r
+```{r}
 sampler = independent_length_sampler(
   data = combine_observations(calibration_data, whale_data),
   priors = list(
@@ -551,77 +329,15 @@ sampler = independent_length_sampler(
   # set to false to return sampler function
   package_only = FALSE
 )
-```
 
-```
-## Joining with `by = join_by(altimeter)`
-## Joining with `by = join_by(altimeter)`
-## Joining with `by = join_by(altimeter)`
-## Joining with `by = join_by(UAS, altimeter)`
-## Defining model
-## Building model
-## Setting data and initial values
-## Running calculate on model [Note] Any error reports that follow may simply reflect missing values in model variables.
-## Checking model sizes and dimensions
-## Compiling [Note] This may take a minute. [Note] Use 'showCompilerOutput = TRUE' to see C++ compilation details.
-```
-
-```
-## ===== Monitors =====
-## thin = 1: altimeter_bias, altimeter_scaling, altimeter_variance, image_altitude, object_length, pixel_variance
-## ===== Samplers =====
-## RW sampler (136)
-##   - image_altitude[]  (76 elements)
-##   - object_length[]  (60 elements)
-## conjugate sampler (4)
-##   - altimeter_bias[]  (1 element)
-##   - altimeter_scaling[]  (1 element)
-##   - altimeter_variance[]  (1 element)
-##   - pixel_variance
-```
-
-```
-## Compiling
-##   [Note] This may take a minute.
-##   [Note] Use 'showCompilerOutput = TRUE' to see C++ compilation details.
 ```
 
 
 &nbsp;
 
 Run it!
-
-```r
+```{r}
 output_informative = sampler(niter = 1e6, thin = 10)
-```
-
-```
-## Sampling
-```
-
-```
-## |-------------|-------------|-------------|-------------|
-## |-------------------------------------------------------|
-```
-
-```
-## Extracting altimeter output
-```
-
-```
-## Extracting image output
-```
-
-```
-## Extracting pixel error output
-```
-
-```
-## Extracting object output
-```
-
-```
-## Extracting summaries
 ```
 
 &nbsp;
@@ -629,65 +345,33 @@ output_informative = sampler(niter = 1e6, thin = 10)
 Now let's check results.  
 
 We confirm that bias and scaling were both held constant to 0 and 1, respectively.
-
-```r
+```{r}
 output_informative$altimeters$`P4P Barometer`$summary
-```
-
-```
-##   UAS altimeter parameter      mean        sd      lower    upper       ESS   PSS
-## 1 P4P Barometer      bias 0.8032697 0.8638207 -0.9137631 2.468331 12344.725 50001
-## 2 P4P Barometer  variance 5.3149337 1.1112541  3.3184489 7.505209  1280.483 50001
-## 3 P4P Barometer   scaling 0.9849826 0.0358294  0.9162972 1.056427  3946.923 50001
 ```
 
 
 &nbsp;
 
 Outputs look more reasonable!
-
-```r
+```{r}
 head(output_informative$summaries$objects)
 ```
 
-```
-##   Subject  Measurement Timepoint parameter      mean        sd     lower     upper      ESS   PSS
-## 1   GW_02        TL_px         1    length 12.632930 0.8064565 11.057880 14.159970 129.8752 50001
-## 2   GW_02 TL_w20.00_px         1    length  1.594146 0.1101182  1.384688  1.812920 160.8403 50001
-## 3   GW_02 TL_w25.00_px         1    length  1.851429 0.1259342  1.605168  2.094845 155.0373 50001
-## 4   GW_02 TL_w30.00_px         1    length  2.107764 0.1408167  1.831402  2.379725 149.2196 50001
-## 5   GW_02 TL_w35.00_px         1    length  2.269463 0.1507935  1.983251  2.568183 150.1656 50001
-## 6   GW_02 TL_w40.00_px         1    length  2.377608 0.1575131  2.070872  2.685245 141.9471 50001
-```
-
 We also can confirm that the measurements for total body lengths for rest of the whales also looks reasonable.
-
-```r
+```{r}
 output_informative$summaries$objects %>% filter(Measurement == "TL_px")
-```
-
-```
-##   Subject Measurement Timepoint parameter     mean        sd     lower    upper      ESS   PSS
-## 1   GW_02       TL_px         1    length 12.63293 0.8064565 11.057880 14.15997 129.8752 50001
-## 2   GW_05       TL_px         1    length 10.14971 0.5927402  8.988007 11.33359 242.6205 50001
-## 3   GW_07       TL_px         1    length 10.79891 0.8881069  9.067910 12.55685 229.0303 50001
-## 4   GW_08       TL_px         1    length 11.08569 0.8970785  9.432661 12.92683 242.8929 50001
-## 5   GW_09       TL_px         1    length 10.09300 0.8197268  8.560327 11.75943 274.8081 50001
 ```
 
 
 
 Now let's plot total body length with associated uncertainty for each individual. The lengths look much more reasonable now. There is large uncertainty around each point, but this is expected, as the P4P is susceptible to high error.
-
-```r
+```{r, TL_output_informative, fig.dim = c(7, 5)}
 output_informative$summaries$objects %>% filter(Measurement == "TL_px") %>% 
   ggplot() + theme_bw() + 
   geom_pointrange(aes(x = Subject, y = mean, ymin =lower, ymax = upper)) + 
   theme(axis.text.x = element_text(angle = 90, vjust = 1, hjust=1)) + 
   ylab("Total body length (m)") 
 ```
-
-![plot of chunk TL_output_informative](figure/TL_output_informative-1.png)
 
 
 &nbsp;

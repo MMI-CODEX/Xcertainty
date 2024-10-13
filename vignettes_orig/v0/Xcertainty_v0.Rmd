@@ -1,8 +1,6 @@
 ---
 title: "Xcertainty"
-output: 
-  html_document:
-    keep_md: yes
+output: rmarkdown::html_vignette
 description: >
   Start here to learn how to use Xcertainty. You'll learn how to include drone-based measurement data into a Bayesian statistical model to produce predictive posterior distributions that can be used to describe each measurement and its associated uncertainty.
 vignette: >
@@ -11,10 +9,12 @@ vignette: >
   \usepackage[utf8]{inputenc}
 fontsize: 13pt 
 author: "KC Bierlich & Josh Hewitt, CODEX"
-date: "2024-10-13"
+date: "2024-09-19"
 ---
 
-
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
 
 
 ## Introduction
@@ -71,8 +71,7 @@ Steps:
 &nbsp;
 
 We'll first load the Xcertainty package, as well as other packages we will use throughout this example.
-
-```r
+```{r, echo=TRUE, warning=FALSE}
 library(Xcertainty)
 
 library(tidyverse)
@@ -81,30 +80,20 @@ library(ggdist)
 
 ### Calibration Objects
 First we'll load and prepare the calibration data, which is from [Bierlich et al., 2024](https://doi.org/10.1139/dsa-2023-0051). Note that "CO" here stands for "Calibration Object" used for training data, and "CO.L" is the true length of the CO (1 m) and "Lpix" is the photogrammetric measurement of the CO in pixels. Each UAS has a unique CO.ID so that the training data and observation (whale) data can be linked. We will filter to use CO data from the I2 drone.
-
-```r
+```{r}
 # load calibration measurement data
 data("co_data")
 
 # sample size for both drones
 table(co_data$uas)
-```
 
-```
-## 
-##  I2 P4P 
-##  49  69
-```
-
-```r
 # filter for I2 drone
 co_data_I2 <- co_data %>% filter(uas == "I2")
 ```
 
 
 Next, well format the data using `parse_observations()`.
-
-```r
+```{r}
 calibration_data = parse_observations(
   x = co_data_I2, 
   subject_col = 'CO.ID',
@@ -132,43 +121,17 @@ Now we'll load and prepare the gray whale measurement data. The column 'whale_ID
 To estimate body condition for these gray whales, we will use body widths between 20-70% of the body length. We'll save the column names of these widths as their own object.  
 
 For this example, we will only use whale measurements collected using the I2 drone. See the vignette titled "Xcertainty_informative_prios" for an example using P4P data. Note, that Xcertainty can also incorporate measurements with missing LiDAR data (NAs).
-
-```r
+```{r}
 # load gray whale measurement data
 data("gw_data")
 
 # quick look at the data
 head(gw_data)
-```
 
-```
-## # A tibble: 6 × 34
-##   whale_ID image     year   DOY uas   Focal…¹ Focal…²    Sw    Iw Baro_…³ Launc…⁴ Baro_…⁵ Laser…⁶ CO.ID TL_px TL_w0…⁷ TL_w1…⁸ TL_w1…⁹ TL_w2…˟ TL_w2…˟ TL_w3…˟
-##   <chr>    <chr>    <int> <int> <chr>   <dbl>   <dbl> <dbl> <int>   <dbl>   <dbl>   <dbl>   <dbl> <chr> <dbl>   <dbl>   <dbl>   <dbl>   <dbl>   <dbl>   <dbl>
-## 1 GW_01    image_0…  2022   233 I2       25      NA    17.3  3840    41.8    1.72    43.5    44.3 CO_I… 1536.    83.5   117.     154.    191.    235.    253.
-## 2 GW_02    image_0…  2019   249 P4P       8.8     9.2  13.2  3840    25.6    1.72    27.3    NA   CO_P… 1185.    68.9    97.0    107.    151.    169.    197.
-## 3 GW_02    image_0…  2019   249 P4P       8.8     9.2  13.2  3840    25.6    1.72    27.3    NA   CO_P… 1203.    68.9    91.9    107.    151.    181.    202.
-## 4 GW_03    image_0…  2022   191 I2       25      NA    17.3  3840    46.7    1.72    48.4    47.5 CO_I…  951.    57.4    87.5    107.    134.    148.    156.
-## 5 GW_03    image_0…  2022   191 I2       25      NA    17.3  3840    47      1.72    48.7    46.5 CO_I…  959.    59.8    86.9    109.    125.    139.    149.
-## 6 GW_04    image_0…  2022   209 I2       25      NA    17.3  3840    29.5    2.18    31.7    29.0 CO_I… 1925.   102.    138.     181.    227.    266.    289.
-## # … with 13 more variables: TL_w35.00_px <dbl>, TL_w40.00_px <dbl>, TL_w45.00_px <dbl>, TL_w50.00_px <dbl>, TL_w55.00_px <dbl>, TL_w60.00_px <dbl>,
-## #   TL_w65.00_px <dbl>, TL_w70.00_px <dbl>, TL_w75.00_px <dbl>, TL_w80.00_px <dbl>, TL_w85.00_px <dbl>, TL_w90.00_px <dbl>, TL_w95.00_px <dbl>, and
-## #   abbreviated variable names ¹​Focal_Length, ²​Focal_Length_adj, ³​Baro_raw, ⁴​Launch_Ht, ⁵​Baro_Alt, ⁶​Laser_Alt, ⁷​TL_w05.00_px, ⁸​TL_w10.00_px, ⁹​TL_w15.00_px,
-## #   ˟​TL_w20.00_px, ˟​TL_w25.00_px, ˟​TL_w30.00_px
-```
-
-```r
 # number of images per whale ID
 table(gw_data$whale_ID)
-```
 
-```
-## 
-## GW_01 GW_02 GW_03 GW_04 GW_05 GW_06 GW_07 GW_08 GW_09 GW_10 
-##     1     2     2     1     2     1     1     1     1     3
-```
 
-```r
 # filter for I2 drone and select specific widths to include for estimating body condition (20-70%)
 gw_measurements <- gw_data %>% filter(uas == "I2") %>% 
   select(!c("TL_w05.00_px", "TL_w10.00_px", "TL_w15.00_px", 
@@ -191,8 +154,7 @@ Note that you can also set the specific timepoint to link measurements of indivi
 &nbsp;
 
 Also, note that we assign the measurement column (`meas_col`) for TL and the widths between 20-70% that we saved as "width_names". 
-
-```r
+```{r}
 # parse field study
 whale_data = parse_observations(
   x = gw_measurements, 
@@ -218,8 +180,7 @@ This creates a list of three dataframes:
 
 ## Build sampler
 Now we will build a sampler. Always start with using non-informative priors, which should be appropriate for most datasets. In some cases, using informative priors may be more appropriate, especially for datasets that have high errors and when the model is overparameterized -- see the vignette "Xcertianty_informative_priors" for an example. We'll set the altitudes (`image_altitude`) and object length measurements (`object_lengths`) to cover an overly wide range for our target species.  
-
-```r
+```{r}
 sampler = independent_length_sampler(
   data = combine_observations(calibration_data, whale_data),
   priors = list(
@@ -242,75 +203,12 @@ sampler = independent_length_sampler(
 )
 ```
 
-```
-## Joining with `by = join_by(altimeter)`
-## Joining with `by = join_by(altimeter)`
-## Joining with `by = join_by(altimeter)`
-## Joining with `by = join_by(UAS, altimeter)`
-## Defining model
-## Building model
-## Setting data and initial values
-## Running calculate on model [Note] Any error reports that follow may simply reflect missing values in model variables.
-## Checking model sizes and dimensions
-## Compiling [Note] This may take a minute. [Note] Use 'showCompilerOutput = TRUE' to see C++ compilation details.
-```
-
-```
-## ===== Monitors =====
-## thin = 1: altimeter_bias, altimeter_scaling, altimeter_variance, image_altitude, object_length, pixel_variance
-## ===== Samplers =====
-## RW sampler (117)
-##   - image_altitude[]  (57 elements)
-##   - object_length[]  (60 elements)
-## conjugate sampler (7)
-##   - altimeter_bias[]  (2 elements)
-##   - altimeter_scaling[]  (2 elements)
-##   - altimeter_variance[]  (2 elements)
-##   - pixel_variance
-```
-
-```
-## Compiling
-##   [Note] This may take a minute.
-##   [Note] Use 'showCompilerOutput = TRUE' to see C++ compilation details.
-```
-
 
 ## Run Sampler
 Now we can run the sampler. Note, that "niter" refers to the number of iterations. When exploring data outputs, 1e4 or 1e5 can be good place for exploration, as this won't take too much time to run. We recommend using 1e6 for the final analysis since 1e6 MCMC samples is often enough to get a reasonable posterior effective sample size. 
-
-```r
+```{r}
 # run sampler
 output = sampler(niter = 1e6, thin = 10)
-```
-
-```
-## Sampling
-```
-
-```
-## |-------------|-------------|-------------|-------------|
-## |-------------------------------------------------------|
-```
-
-```
-## Extracting altimeter output
-```
-
-```
-## Extracting image output
-```
-
-```
-## Extracting pixel error output
-```
-
-```
-## Extracting object output
-```
-
-```
-## Extracting summaries
 ```
 
 
@@ -321,119 +219,56 @@ Our saved `output` contains all the posterior samples and summaries of all train
 &nbsp;
 
 We can view the posterior summaries (mean, sd, etc.) for each altimeter. Note that the `lower` and `upper` represent the 95% highest posterior density intervals (HPDI) of the posterior distribution.
-
-```r
+```{r}
 output$summaries$altimeters
-```
-
-```
-##   UAS altimeter parameter       mean         sd      lower    upper      ESS   PSS
-## 1  I2 Barometer      bias -0.7127096 1.58932014 -3.8031033 2.455798 2000.290 50001
-## 2  I2 Barometer  variance  5.3992663 1.13764314  3.3858031 7.656946 8348.773 50001
-## 3  I2 Barometer   scaling  1.0022806 0.04129523  0.9214487 1.083462 1481.785 50001
-## 4  I2     Laser      bias -0.4752213 1.63098898 -3.6564912 2.749217 2750.569 50001
-## 5  I2     Laser  variance  6.0715704 1.31790463  3.7847879 8.729066 3002.456 50001
-## 6  I2     Laser   scaling  0.9964931 0.04213887  0.9135947 1.078784 1982.081 50001
 ```
 
 &nbsp;
 
 And we can view and compare the posterior outputs for each image's altitude compared to the observed altitude from the barometer (blue) and LiDAR (orange) in the training dataset.
-
-```r
+```{r, fig.dim = c(7, 5)}
 output$summaries$images %>% left_join(co_data %>% rename(Image = image), by = "Image") %>%
   ggplot() + theme_bw() + 
   geom_pointrange(aes(x = Baro_Alt, y = mean, ymin = lower, ymax = upper), color = "blue") + 
   geom_pointrange(aes(x = Laser_Alt, y = mean, ymin = lower, ymax = upper), color = "orange") + 
   geom_abline(slope = 1, intercept = 0, lty = 2) + 
   ylab("posterior altitude (m)") + xlab("observed altitude (m)")
-```
 
 ```
-## Warning: Removed 8 rows containing missing values (`geom_pointrange()`).
-## Removed 8 rows containing missing values (`geom_pointrange()`).
-```
-
-![plot of chunk posterior_vs_obs_alt](figure/posterior_vs_obs_alt-1.png)
 
 &nbsp;
 
 We can also view the pixel variance from the training data
-
-```r
+```{r}
 output$pixel_error$summary
-```
-
-```
-##   error parameter     mean       sd    lower    upper      ESS   PSS
-## 1 pixel  variance 18.81583 3.722385 12.22056 26.34165 17653.12 50001
 ```
 
 
 &nbsp;
 
 We can view the posterior summaries (mean, sd, etc.) for all measurements of each individual whale. As above, the `lower` and `upper` represent the 95% HPDI of the posterior distribution for that specific measurement.
-
-```r
+```{r}
 head(output$summaries$objects)
-```
-
-```
-##   Subject  Measurement Timepoint parameter      mean         sd     lower     upper      ESS   PSS
-## 1   GW_01        TL_px         1    length 12.555545 0.48704796 11.575160 13.505501 243.1464 50001
-## 2   GW_01 TL_w20.00_px         1    length  1.561236 0.06995057  1.422562  1.698373 358.1524 50001
-## 3   GW_01 TL_w25.00_px         1    length  1.920606 0.08238801  1.759192  2.084941 325.5866 50001
-## 4   GW_01 TL_w30.00_px         1    length  2.064774 0.08760304  1.894536  2.240992 294.6102 50001
-## 5   GW_01 TL_w35.00_px         1    length  2.129054 0.08953702  1.952838  2.306796 307.0597 50001
-## 6   GW_01 TL_w40.00_px         1    length  2.129249 0.08961719  1.953301  2.307159 301.6908 50001
 ```
 
 &nbsp;
 
 You can filter to view a specific measurement across all individuals, such as total body length (TL). 
-
-```r
+```{r}
 output$summaries$objects %>% filter(Measurement == "TL_px")
-```
-
-```
-##   Subject Measurement Timepoint parameter      mean        sd     lower    upper       ESS   PSS
-## 1   GW_01       TL_px         1    length 12.555545 0.4870480 11.575160 13.50550 243.14637 50001
-## 2   GW_03       TL_px         1    length  8.407687 0.2183205  7.986385  8.83699 675.38916 50001
-## 3   GW_04       TL_px         1    length 11.175770 0.6021496  9.960727 12.35394  86.85540 50001
-## 4   GW_06       TL_px         1    length 10.139998 0.5692372  9.059978 11.37050  74.45342 50001
-## 5   GW_10       TL_px         1    length  9.662577 0.2231506  9.233452 10.09427 594.96188 50001
 ```
 
 &nbsp;
 
 Or filter directly for all measurements from a specific individual
-
-```r
+```{r}
 output$summaries$objects %>% filter(Subject == "GW_01")
-```
-
-```
-##    Subject  Measurement Timepoint parameter       mean         sd      lower     upper      ESS   PSS
-## 1    GW_01        TL_px         1    length 12.5555449 0.48704796 11.5751602 13.505501 243.1464 50001
-## 2    GW_01 TL_w20.00_px         1    length  1.5612358 0.06995057  1.4225619  1.698373 358.1524 50001
-## 3    GW_01 TL_w25.00_px         1    length  1.9206064 0.08238801  1.7591924  2.084941 325.5866 50001
-## 4    GW_01 TL_w30.00_px         1    length  2.0647741 0.08760304  1.8945362  2.240992 294.6102 50001
-## 5    GW_01 TL_w35.00_px         1    length  2.1290542 0.08953702  1.9528378  2.306796 307.0597 50001
-## 6    GW_01 TL_w40.00_px         1    length  2.1292485 0.08961719  1.9533010  2.307159 301.6908 50001
-## 7    GW_01 TL_w45.00_px         1    length  2.0303100 0.08610190  1.8611946  2.201800 312.4256 50001
-## 8    GW_01 TL_w50.00_px         1    length  1.8889989 0.08124998  1.7305222  2.050521 305.9455 50001
-## 9    GW_01 TL_w55.00_px         1    length  1.6998563 0.07501762  1.5523911  1.849300 328.3225 50001
-## 10   GW_01 TL_w60.00_px         1    length  1.3389563 0.06284189  1.2162895  1.463644 379.2243 50001
-## 11   GW_01 TL_w65.00_px         1    length  1.1071798 0.05572070  0.9975830  1.215625 439.2577 50001
-## 12   GW_01 TL_w70.00_px         1    length  0.9036739 0.04964069  0.8057342  1.001488 527.2479 50001
 ```
 
 &nbsp;
 
 Plot total body length with associated uncertainty for each individual. Here the black dots represent the mean of the posterior distribution for total body length and the black bars around each dot represents the uncertainty, as 95% HPDI.  
-
-```r
+```{r, fig.dim = c(7, 5)}
 output$summaries$objects %>% filter(Measurement == "TL_px") %>% 
   ggplot() + theme_bw() + 
   geom_pointrange(aes(x = Subject, y = mean, ymin =lower, ymax = upper)) + 
@@ -441,20 +276,15 @@ output$summaries$objects %>% filter(Measurement == "TL_px") %>%
   ylab("Total body length (m)") 
 ```
 
-![plot of chunk TL_per_subject](figure/TL_per_subject-1.png)
-
 &nbsp;
 
 You can also view and plot the posterior samples for an individual's measurement. Note, be sure to exclude the first half of the posterior samples, i.e., if 10000 samples, exclude the first 5000. To demonstrate this below, we'll first save the samples for an individual as an object, then plot the distribution with the first half of the samples excluded. 
-
-```r
+```{r, fig.dim = c(6, 6)}
 ID_samples <- output$objects$`GW_01 TL_px 1`$samples
 
 data.frame(TL = ID_samples[(length(ID_samples)/2):length((ID_samples))]) %>%
   ggplot() + stat_halfeye(aes(TL), .width = 0.95) + theme_bw() 
 ```
-
-![plot of chunk TL_dist](figure/TL_dist-1.png)
 
 
 &nbsp;
@@ -475,8 +305,7 @@ We'll also calculate body condition from the posterior samples using `body_condi
 
 Note, for calculating body volume, the default for `height_ratios` is 1, implying that the vertical cross section of the animal is circular rather than elliptical. To calculate body volume using an elliptical model [i.e., Christiansen et al., 2019](https://doi.org/10.1111/2041-210X.13298), enter the the height-width ratio for each width using `height_ratios`. 
  
-
-```r
+```{r}
 # First, enumerate the width locations along the animal's length
 width_increments = as.numeric(
   str_extract(
@@ -506,25 +335,14 @@ You can view the body condition summaries (`surface_area`, `body_area_index`, `b
 &nbsp;
 
 View summary of BAI
-
-```r
+```{r}
 head(body_condition_output$summaries$body_area_index)
-```
-
-```
-##   Subject Timepoint          metric     mean        sd    lower    upper
-## 1   GW_01         1 body_area_index 27.94235 0.1910536 27.56164 28.31357
-## 2   GW_03         1 body_area_index 29.64411 0.2201969 29.21601 30.07912
-## 3   GW_04         1 body_area_index 25.38517 0.1506245 25.08871 25.67804
-## 4   GW_06         1 body_area_index 29.02621 0.1547076 28.71484 29.32287
-## 5   GW_10         1 body_area_index 25.70055 0.1716905 25.35721 26.03263
 ```
 
 &nbsp;
 
 Plot BAI results 
-
-```r
+```{r, fig.dim = c(7, 5)}
 body_condition_output$summaries$body_area_index %>% 
   ggplot() + theme_bw() + 
   geom_pointrange(aes(x = Subject, y = mean, ymin =lower, ymax = upper)) + 
@@ -532,32 +350,19 @@ body_condition_output$summaries$body_area_index %>%
   ylab("Body Area Index") 
 ```
 
-![plot of chunk bai](figure/bai-1.png)
-
 
 &nbsp;
 
 
 View summary of Body Volume
-
-```r
+```{r}
 head(body_condition_output$summaries$body_volume)
-```
-
-```
-##   Subject Timepoint      metric     mean        sd     lower    upper
-## 1   GW_01         1 body_volume 7.275273 1.1928494 5.0140880 9.705012
-## 2   GW_03         1 body_volume 1.150579 0.2002353 0.7748312 1.547931
-## 3   GW_04         1 body_volume 3.115615 0.8689407 1.5549323 4.845967
-## 4   GW_06         1 body_volume 3.077839 0.8440850 1.4487270 4.863995
-## 5   GW_10         1 body_volume 1.408537 0.2115602 1.0040041 1.814724
 ```
 
 &nbsp;
 
 Plot Body Volume results 
-
-```r
+```{r, fig.dim = c(7, 5)}
 body_condition_output$summaries$body_volume %>% 
   ggplot() + theme_bw() + 
   geom_pointrange(aes(x = Subject, y = mean, ymin =lower, ymax = upper)) + 
@@ -565,36 +370,17 @@ body_condition_output$summaries$body_volume %>%
   ylab("Body Volume (m^3)") 
 ```
 
-![plot of chunk body_vol](figure/body_vol-1.png)
-
 &nbsp;
 
 View the standardized widths of an individual
-
-```r
+```{r}
 body_condition_output$summaries$standardized_widths %>% filter(Subject == "GW_01")
-```
-
-```
-##    Subject Timepoint                           metric       mean          sd      lower      upper
-## 1    GW_01         1 standardized_widths TL_w20.00_px 0.12434748 0.002836559 0.11863102 0.12975904
-## 2    GW_01         1 standardized_widths TL_w25.00_px 0.15296995 0.002862104 0.14737143 0.15861710
-## 3    GW_01         1 standardized_widths TL_w30.00_px 0.16445184 0.002856844 0.15880899 0.17007435
-## 4    GW_01         1 standardized_widths TL_w35.00_px 0.16957290 0.002874428 0.16407210 0.17538001
-## 5    GW_01         1 standardized_widths TL_w40.00_px 0.16958782 0.002854959 0.16383244 0.17505941
-## 6    GW_01         1 standardized_widths TL_w45.00_px 0.16170776 0.002853269 0.15620600 0.16746598
-## 7    GW_01         1 standardized_widths TL_w50.00_px 0.15045249 0.002851982 0.14480914 0.15596068
-## 8    GW_01         1 standardized_widths TL_w55.00_px 0.13538726 0.002861162 0.12978461 0.14104191
-## 9    GW_01         1 standardized_widths TL_w60.00_px 0.10664320 0.002835629 0.10102742 0.11213754
-## 10   GW_01         1 standardized_widths TL_w65.00_px 0.08818302 0.002840635 0.08257866 0.09373634
-## 11   GW_01         1 standardized_widths TL_w70.00_px 0.07197548 0.002830453 0.06649435 0.07756016
 ```
 
 &nbsp;
 
 Plot standardized widths of an individual
-
-```r
+```{r, fig.dim = c(7, 5)}
 body_condition_output$summaries$standardized_widths$metric <- gsub("standardized_widths TL_", "", body_condition_output$summaries$standardized_widths$metric)
 
 body_condition_output$summaries$standardized_widths %>% filter(Subject == "GW_01") %>%
@@ -604,14 +390,11 @@ body_condition_output$summaries$standardized_widths %>% filter(Subject == "GW_01
   xlab("width%") + ylab("standardized width") + ggtitle("GW_01") 
 ```
 
-![plot of chunk std_widths](figure/std_widths-1.png)
-
 
 &nbsp;
 
 Can also view standardized widths across all individuals
-
-```r
+```{r, fig.dim = c(7, 5)}
 body_condition_output$summaries$standardized_widths %>% 
   ggplot() + theme_bw() + 
   geom_boxplot(aes(x = metric, y = mean)) + 
@@ -619,32 +402,22 @@ body_condition_output$summaries$standardized_widths %>%
   xlab("width%") + ylab("standardized width")
 ```
 
-![plot of chunk std_widths_all](figure/std_widths_all-1.png)
-
 &nbsp;
 
 You can also view individual's posterior samples for any of the body condition metrics.
-
-```r
+```{r}
 head(body_condition_output$body_area_index$`GW_01`$samples)
-```
-
-```
-## [1] 164.5020 156.3537 123.5935 145.4273 140.7272 114.3155
 ```
 
 
 
 And from these posterior samples for an individual, we can plot the distribution. Here we'll plot BAI as an example, and include the 95% HPDI. Remember to exclude the first half of the samples, as mentioned above. 
-
-```r
+```{r, fig.dim = c(6, 6)}
 ID_samples <- body_condition_output$body_area_index$`GW_01 1`$samples
   
 data.frame(BAI = ID_samples[(length(ID_samples)/2):length((ID_samples))]) %>%
   ggplot() + stat_halfeye(aes(BAI), .width = 0.95) + theme_bw() + ggtitle("GW_01")
 ```
-
-![plot of chunk bai_dist](figure/bai_dist-1.png)
 
 
 &nbsp;
