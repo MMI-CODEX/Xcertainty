@@ -388,7 +388,7 @@ ggplot() + theme_bw() +
   xlab("estimated age") + ylab("total body length (m)") 
 ```
 
-![plot of chunk length&age](figure/length&age-1.png)
+![plot of chunk length&age](img/length&age-1.png)
 
 &nbsp; 
 
@@ -449,7 +449,7 @@ ggplot() + theme_bw() +
                  aes(xmin = Age_est_lower, xmax = Age_est_upper, y = mean, color = sex), lty = 3) 
 ```
 
-![plot of chunk growth_curves](figure/growth_curves-1.png)
+![plot of chunk growth_curves](img/growth_curves-1.png)
 
 &nbsp;
 

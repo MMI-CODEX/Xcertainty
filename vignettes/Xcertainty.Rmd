@@ -354,7 +354,7 @@ output$summaries$images %>% left_join(co_data %>% rename(Image = image), by = "I
 ## Removed 8 rows containing missing values (`geom_pointrange()`).
 ```
 
-![plot of chunk posterior_vs_obs_alt](figure/posterior_vs_obs_alt-1.png)
+![plot of chunk posterior_vs_obs_alt](img/posterior_vs_obs_alt-1.png)
 
 &nbsp;
 
@@ -441,7 +441,7 @@ output$summaries$objects %>% filter(Measurement == "TL_px") %>%
   ylab("Total body length (m)") 
 ```
 
-![plot of chunk TL_per_subject](figure/TL_per_subject-1.png)
+![plot of chunk TL_per_subject](img/TL_per_subject-1.png)
 
 &nbsp;
 
@@ -454,7 +454,7 @@ data.frame(TL = ID_samples[(length(ID_samples)/2):length((ID_samples))]) %>%
   ggplot() + stat_halfeye(aes(TL), .width = 0.95) + theme_bw() 
 ```
 
-![plot of chunk TL_dist](figure/TL_dist-1.png)
+![plot of chunk TL_dist](img/TL_dist-1.png)
 
 
 &nbsp;
@@ -532,7 +532,7 @@ body_condition_output$summaries$body_area_index %>%
   ylab("Body Area Index") 
 ```
 
-![plot of chunk bai](figure/bai-1.png)
+![plot of chunk bai](img/bai-1.png)
 
 
 &nbsp;
@@ -565,7 +565,7 @@ body_condition_output$summaries$body_volume %>%
   ylab("Body Volume (m^3)") 
 ```
 
-![plot of chunk body_vol](figure/body_vol-1.png)
+![plot of chunk body_vol](img/body_vol-1.png)
 
 &nbsp;
 
@@ -604,7 +604,7 @@ body_condition_output$summaries$standardized_widths %>% filter(Subject == "GW_01
   xlab("width%") + ylab("standardized width") + ggtitle("GW_01") 
 ```
 
-![plot of chunk std_widths](figure/std_widths-1.png)
+![plot of chunk std_widths](img/std_widths-1.png)
 
 
 &nbsp;
@@ -619,7 +619,7 @@ body_condition_output$summaries$standardized_widths %>%
   xlab("width%") + ylab("standardized width")
 ```
 
-![plot of chunk std_widths_all](figure/std_widths_all-1.png)
+![plot of chunk std_widths_all](img/std_widths_all-1.png)
 
 &nbsp;
 
@@ -644,7 +644,7 @@ data.frame(BAI = ID_samples[(length(ID_samples)/2):length((ID_samples))]) %>%
   ggplot() + stat_halfeye(aes(BAI), .width = 0.95) + theme_bw() + ggtitle("GW_01")
 ```
 
-![plot of chunk bai_dist](figure/bai_dist-1.png)
+![plot of chunk bai_dist](img/bai_dist-1.png)
 
 
 &nbsp;

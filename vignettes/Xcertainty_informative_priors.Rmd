@@ -304,7 +304,7 @@ output$summaries$images %>% left_join(co_data %>% rename(Image = image), by = "I
 ## Warning: Removed 8 rows containing missing values (`geom_pointrange()`).
 ```
 
-![plot of chunk poster_vs_obs_alt_P4P](figure/poster_vs_obs_alt_P4P-1.png)
+![plot of chunk poster_vs_obs_alt_P4P](img/poster_vs_obs_alt_P4P-1.png)
 
 &nbsp;
 
@@ -365,7 +365,7 @@ output$summaries$objects %>% filter(Measurement == "TL_px") %>%
   ylab("Total body length (m)") 
 ```
 
-![plot of chunk TL_output_wonky](figure/TL_output_wonky-1.png)
+![plot of chunk TL_output_wonky](img/TL_output_wonky-1.png)
 
 &nbsp;
 
@@ -405,7 +405,7 @@ co_data_p4p %>%
   geom_abline(intercept = 0, slope =1, lty = 2)
 ```
 
-![plot of chunk baro_vs_true_alt](figure/baro_vs_true_alt-1.png)
+![plot of chunk baro_vs_true_alt](img/baro_vs_true_alt-1.png)
 
 &nbsp;
 
@@ -687,7 +687,7 @@ output_informative$summaries$objects %>% filter(Measurement == "TL_px") %>%
   ylab("Total body length (m)") 
 ```
 
-![plot of chunk TL_output_informative](figure/TL_output_informative-1.png)
+![plot of chunk TL_output_informative](img/TL_output_informative-1.png)
 
 
 &nbsp;

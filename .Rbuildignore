@@ -11,6 +11,6 @@ cran-comments.md
 ^examples
 README.md
 ^Meta$
-.vignettes_orig/
-.cache/
-.figure/
+^vignettes_orig/
+^cache/
+^figure/
