@@ -78,7 +78,7 @@ if(interactive()) {
   )
   
   # run sampler
-  body_condition_measurement_estimates = sampler(niter = 1e4, thin = 10)
+  body_condition_measurement_estimates = sampler(niter = 1e4, thin = 100)
   
 } else {
   data("body_condition_measurement_estimates")
