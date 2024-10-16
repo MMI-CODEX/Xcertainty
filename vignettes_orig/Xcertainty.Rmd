@@ -60,7 +60,7 @@ In this vignette, we'll cover how to setup your data, run `Xcertainty`, calculat
 We will use a small example dataset consisting of body length and body width measurements of Pacific Coast Feeding Group (PCFG) gray whales imaged along the coast of Newport, Oregon, USA using two different drones, a DJI Inspire 2 (I2, n = 5 individuals) and a DJI Phantom 4 Pro (P4P, n = 5 individuals). The P4P contains only a barometer for estimating altitude, while the I2 contains both a barometer and a LiDAR (or laser) altimeter (LidarBoX, [Bierlich et al., 2024](https://doi.org/10.1139/dsa-2023-0051)). In this example, we will use data from the I2 (see [Xcertianty_informative_priors](Xcertainty_informative_priors.html) for an example using P4P data).
 
 We will use the length and width measurements to calculate several body condition metrics (body area index, body volume, surface area, and 
-standardized widths). We used open-source software [MorphoMetriX v2](https://github.com/ZappyMan/MorphoMetriX-V2) and [CollatriX](https://github.com/cbirdferrer/collatrix) to measure the whales and process the measurements, respectively.
+standardized widths). We used open-source software [MorphoMetriX v2](https://github.com/MMI-CODEX/MorphoMetriX-V2) and [CollatriX](https://github.com/cbirdferrer/collatrix) to measure the whales and process the measurements, respectively.
 
 
 Steps:     
