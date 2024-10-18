@@ -42,6 +42,20 @@ than elliptical.}
 
 \item{metric}{Character vector of the body condition metrics to compute}
 }
+\value{
+outputs a list with five elements: 
+\describe{
+ \item{surface_area}{a list containing the surface area samples and summaries
+ for each Subject}
+ \item{body_area_index}{a list containing the body area index samples and summaries
+ for each Subject}
+ \item{body_volume}{a list containing the body volume samples and summaries
+ for each Subject}
+ \item{standardized_widths}{a list containing the standardized width samples and summaries
+ for each Subject}
+ \item{summaries}{a list for each body condition metric containing summaries for each Subject}
+ }
+}
 \description{
 Function that post-processes posterior samples from a sampler, such as 
 \code{independent_length_sampler()}.

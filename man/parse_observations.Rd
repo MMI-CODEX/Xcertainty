@@ -56,6 +56,19 @@ analysis}
 \item{alt_conversion_col}{if not \code{NULL}, column name in \code{x} with 
 an altitude used to convert measurement columns from lengths to pixels}
 }
+\value{
+outputs a list with four elements: 
+\describe{
+ \item{pixel_counts}{a tibble containing the measurements in pixels 
+ linked with Subject, Measurement description, Image, and the Timepoint}
+ \item{training_objects}{a tibble containing the Subject, Measurement, Length, 
+ and Timepoint. NULL if no training objects were included}
+ \item{prediction_objects}{a tibble containing the Subject, Measurement, and 
+ Timepoint. NULL if no prediction data included}
+ \item{image_info}{a tibble containing the Image, Barometer, Laser, FocalLength,
+ ImageWidth, SensorWidth, and UAS}
+ }
+}
 \description{
 Photogrammetric data are often recorded in a wide-format \code{data.frame}, 
 in which each row contains all measurement information for a single animal.

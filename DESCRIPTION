@@ -1,6 +1,6 @@
 Package: Xcertainty
 Type: Package
-Title: Estimate Object Lengths and Morphological Relationships from Photogrammetric Imagery
+Title: Estimating Lengths and Uncertainty from Photogrammetric Imagery
 Version: 1.0.0
 Date: 2024-09-24
 Authors@R: c(person(given = "Joshua",
@@ -14,7 +14,7 @@ Authors@R: c(person(given = "Joshua",
                       family = "Pirotta",
                       role = "aut"))
 Author: Joshua Hewitt [aut], K.C. Bierlich [aut, cre], Enrico Pirotta [aut]
-Maintainer: K.C. Bierlich <bierlick@oregonstate.edu>
+Maintainer: K.C. Bierlich <kevin.bierlich@oregonstate.edu>
 Description: Implementation of Bayesian models for estimating object lengths and morphological relationships between object lengths using photographic data collected from drones.  The Bayesian model is described in "Bayesian approach for predicting photogrammetric uncertainty in morphometric measurements derived from drones" (Bierlich et al., 2021, <doi:10.3354/meps13814>).
 URL: https://github.com/MMI-CODEX/Xcertainty
 BugReports: https://github.com/MMI-CODEX/Xcertainty/issues

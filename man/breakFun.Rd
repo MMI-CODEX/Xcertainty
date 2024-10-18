@@ -11,11 +11,14 @@ breakFun(B, delta)
 
 \item{delta}{breakpoint location}
 }
+\value{
+1 if \code{B <= delta}, and 0 otherwise.
+}
 \description{
 Implements Heaviside step function for use in nimble models, H(B) = 1 if 
-B <= delta
+B <= delta. For internal use only.  Not intended to be called directly by users.
 }
 \examples{
-breakFun(B = 1, delta = 0)
+breakFun(B = 1, delta = 0). 
 
 }

@@ -10,6 +10,19 @@ combine_observations(...)
 \item{...}{Parsed datasets to combine (i.e., outputs from 
 \code{Xcertainty::parsed_observations})}
 }
+\value{
+outputs a list with four elements: 
+\describe{
+ \item{pixel_counts}{a tibble containing the measurements in pixels 
+ linked with Subject, Measurement description, Image, and the Timepoint}
+ \item{training_objects}{a tibble containing the Subject, Measurement, Length, 
+ and Timepoint. NULL if no training objects were included}
+ \item{prediction_objects}{a tibble containing the Subject, Measurement, and 
+ Timepoint. NULL if no prediction data included}
+ \item{image_info}{a tibble containing the Image, Barometer, Laser, FocalLength,
+ ImageWidth, SensorWidth, and UAS}
+ }
+}
 \description{
 Combine parsed observations, such as calibration and observation (whale) data into a single parsed object. 
 This combined, single parsed object can then be used as the data input for one of the samplers.
