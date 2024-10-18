@@ -12,9 +12,9 @@
 #' 
 #' @importFrom nimble nimbleFunction
 #'
-#' @return 1 if \code{B <= delta}, and 0 otherwise.  
+#' @return 1 if \code{B <= delta}, and 0 otherwise  
 #'
-#' @examples breakFun(B = 1, delta = 0). 
+#' @examples breakFun(B = 1, delta = 0) 
 #' 
 breakFun <- nimble::nimbleFunction(
   run = function(B = double(0), delta = double(0)) {

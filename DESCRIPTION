@@ -14,7 +14,7 @@ Authors@R: c(person(given = "Joshua",
                       family = "Pirotta",
                       role = "aut"))
 Author: Joshua Hewitt [aut], K.C. Bierlich [aut, cre], Enrico Pirotta [aut]
-Maintainer: K.C. Bierlich <kevin.bierlich@oregonstate.edu>
+Maintainer: K.C. Bierlich <bierlick@oregonstate.edu>
 Description: Implementation of Bayesian models for estimating object lengths and morphological relationships between object lengths using photographic data collected from drones.  The Bayesian model is described in "Bayesian approach for predicting photogrammetric uncertainty in morphometric measurements derived from drones" (Bierlich et al., 2021, <doi:10.3354/meps13814>).
 URL: https://github.com/MMI-CODEX/Xcertainty
 BugReports: https://github.com/MMI-CODEX/Xcertainty/issues
