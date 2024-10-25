@@ -11,7 +11,7 @@ vignette: >
   \usepackage[utf8]{inputenc}
 fontsize: 13pt 
 author: "KC Bierlich & Josh Hewitt, CODEX"
-date: "2024-10-13"
+date: "2024-10-25"
 ---
 
 ```{r setup, include=FALSE}
@@ -79,10 +79,11 @@ calibration_data = parse_observations(
 )
 ```
 
-* This creates a list of three dataframes:   
-    + `calibration_data$pixel_counts`.   
-    + `calibration_data$training_objects`.    
-    + `calibration_data$image_info`.  
+This creates a list of four elements:   
+    * `calibration_data$pixel_counts`.   
+    * `calibration_data$training_objects`.    
+    * `calibration_data$image_info`.
+    * `calibration_data$prediction_objects`
 
 
 Next, we'll use `parse_observations()` to prepare the whale data. Note, that the `timepoint_col` is set to year since we are interested in the total body length of each individual summarized at the yearly scale. 
@@ -187,12 +188,14 @@ We can view the posterior summaries of the pixel variance
 output_growth$pixel_error$summary
 ```
 
+
 &nbsp;
 
 Let's view a preview of the posterior summaries of the growth curve parameters, including k, t0, A for males and females, and individual's birth year.
 ```{r}
 output_growth$summaries$growth_curve[1:10,]
 ```
+
 
 &nbsp;
 
@@ -216,11 +219,12 @@ sum <- sums_L %>%
          Age_est_upper = Year - birth_year_lower)
 ```
 
+
 &nbsp;
 
 ## Plot Growth Curves
 We can view these results and plot the uncertainty associated with total body length (solid vertical line) and estimated age (dashed horizontal line).
-```{r, length&age, fig.dim = c(7, 5)}
+```{r, Xc_Gr_length_age, fig.dim = c(10, 8)}
 ggplot() + theme_bw() + 
   geom_pointrange(data = sum, aes(x = Age_est_mean, y = mean, ymin = lower, ymax = upper)) +
   geom_errorbarh(data = sum, 
@@ -228,6 +232,7 @@ ggplot() + theme_bw() +
   xlab("estimated age") + ylab("total body length (m)") 
 
 ```
+
 
 &nbsp; 
 
@@ -274,7 +279,7 @@ $nbsp;
 
 
 Now we can plot the results 
-```{r, growth_curves, fig.dim = c(7, 5)}
+```{r, Xc_Gr_growth_curves, fig.dim = c(10, 8)}
 ggplot() + theme_bw() + 
   xlab("estimated age") + ylab("total body length (m)") + 
   geom_ribbon(data = full_df, aes(x = age, ymin = Exp.L_lower, ymax = Exp.L_upper, fill = sex), alpha = 0.4) + 
@@ -287,6 +292,7 @@ ggplot() + theme_bw() +
                  aes(xmin = Age_est_lower, xmax = Age_est_upper, y = mean, color = sex), lty = 3) 
   
 ```
+
 
 &nbsp;
 

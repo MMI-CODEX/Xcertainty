@@ -11,7 +11,7 @@ vignette: >
   \usepackage[utf8]{inputenc}
 fontsize: 13pt 
 author: "KC Bierlich & Josh Hewitt, CODEX"
-date: "2024-10-13"
+date: "2024-10-25"
 ---
 
 
@@ -120,10 +120,11 @@ calibration_data = parse_observations(
 )
 ```
 
-This creates a list of three dataframes:   
+This creates a list of four elements:   
     * `calibration_data$pixel_counts`.   
     * `calibration_data$training_objects`.    
-    * `calibration_data$image_info`.    
+    * `calibration_data$image_info`.
+    * `calibration_data$prediction_objects`
  
 
 ### Gray whale measurements
@@ -143,18 +144,19 @@ head(gw_data)
 
 ```
 ## # A tibble: 6 × 34
-##   whale_ID image     year   DOY uas   Focal…¹ Focal…²    Sw    Iw Baro_…³ Launc…⁴ Baro_…⁵ Laser…⁶ CO.ID TL_px TL_w0…⁷ TL_w1…⁸ TL_w1…⁹ TL_w2…˟ TL_w2…˟ TL_w3…˟
-##   <chr>    <chr>    <int> <int> <chr>   <dbl>   <dbl> <dbl> <int>   <dbl>   <dbl>   <dbl>   <dbl> <chr> <dbl>   <dbl>   <dbl>   <dbl>   <dbl>   <dbl>   <dbl>
-## 1 GW_01    image_0…  2022   233 I2       25      NA    17.3  3840    41.8    1.72    43.5    44.3 CO_I… 1536.    83.5   117.     154.    191.    235.    253.
-## 2 GW_02    image_0…  2019   249 P4P       8.8     9.2  13.2  3840    25.6    1.72    27.3    NA   CO_P… 1185.    68.9    97.0    107.    151.    169.    197.
-## 3 GW_02    image_0…  2019   249 P4P       8.8     9.2  13.2  3840    25.6    1.72    27.3    NA   CO_P… 1203.    68.9    91.9    107.    151.    181.    202.
-## 4 GW_03    image_0…  2022   191 I2       25      NA    17.3  3840    46.7    1.72    48.4    47.5 CO_I…  951.    57.4    87.5    107.    134.    148.    156.
-## 5 GW_03    image_0…  2022   191 I2       25      NA    17.3  3840    47      1.72    48.7    46.5 CO_I…  959.    59.8    86.9    109.    125.    139.    149.
-## 6 GW_04    image_0…  2022   209 I2       25      NA    17.3  3840    29.5    2.18    31.7    29.0 CO_I… 1925.   102.    138.     181.    227.    266.    289.
-## # … with 13 more variables: TL_w35.00_px <dbl>, TL_w40.00_px <dbl>, TL_w45.00_px <dbl>, TL_w50.00_px <dbl>, TL_w55.00_px <dbl>, TL_w60.00_px <dbl>,
-## #   TL_w65.00_px <dbl>, TL_w70.00_px <dbl>, TL_w75.00_px <dbl>, TL_w80.00_px <dbl>, TL_w85.00_px <dbl>, TL_w90.00_px <dbl>, TL_w95.00_px <dbl>, and
-## #   abbreviated variable names ¹​Focal_Length, ²​Focal_Length_adj, ³​Baro_raw, ⁴​Launch_Ht, ⁵​Baro_Alt, ⁶​Laser_Alt, ⁷​TL_w05.00_px, ⁸​TL_w10.00_px, ⁹​TL_w15.00_px,
-## #   ˟​TL_w20.00_px, ˟​TL_w25.00_px, ˟​TL_w30.00_px
+##   whale_ID image   year   DOY uas   Focal…¹ Focal…²    Sw    Iw Baro_…³ Launc…⁴ Baro_…⁵ Laser…⁶ CO.ID TL_px TL_w0…⁷ TL_w1…⁸ TL_w1…⁹
+##   <chr>    <chr>  <int> <int> <chr>   <dbl>   <dbl> <dbl> <int>   <dbl>   <dbl>   <dbl>   <dbl> <chr> <dbl>   <dbl>   <dbl>   <dbl>
+## 1 GW_01    image…  2022   233 I2       25      NA    17.3  3840    41.8    1.72    43.5    44.3 CO_I… 1536.    83.5   117.     154.
+## 2 GW_02    image…  2019   249 P4P       8.8     9.2  13.2  3840    25.6    1.72    27.3    NA   CO_P… 1185.    68.9    97.0    107.
+## 3 GW_02    image…  2019   249 P4P       8.8     9.2  13.2  3840    25.6    1.72    27.3    NA   CO_P… 1203.    68.9    91.9    107.
+## 4 GW_03    image…  2022   191 I2       25      NA    17.3  3840    46.7    1.72    48.4    47.5 CO_I…  951.    57.4    87.5    107.
+## 5 GW_03    image…  2022   191 I2       25      NA    17.3  3840    47      1.72    48.7    46.5 CO_I…  959.    59.8    86.9    109.
+## 6 GW_04    image…  2022   209 I2       25      NA    17.3  3840    29.5    2.18    31.7    29.0 CO_I… 1925.   102.    138.     181.
+## # … with 16 more variables: TL_w20.00_px <dbl>, TL_w25.00_px <dbl>, TL_w30.00_px <dbl>, TL_w35.00_px <dbl>, TL_w40.00_px <dbl>,
+## #   TL_w45.00_px <dbl>, TL_w50.00_px <dbl>, TL_w55.00_px <dbl>, TL_w60.00_px <dbl>, TL_w65.00_px <dbl>, TL_w70.00_px <dbl>,
+## #   TL_w75.00_px <dbl>, TL_w80.00_px <dbl>, TL_w85.00_px <dbl>, TL_w90.00_px <dbl>, TL_w95.00_px <dbl>, and abbreviated variable
+## #   names ¹​Focal_Length, ²​Focal_Length_adj, ³​Baro_raw, ⁴​Launch_Ht, ⁵​Baro_Alt, ⁶​Laser_Alt, ⁷​TL_w05.00_px, ⁸​TL_w10.00_px,
+## #   ⁹​TL_w15.00_px
 ```
 
 ```r
@@ -210,10 +212,11 @@ whale_data = parse_observations(
 ```
 
   
-This creates a list of three dataframes:   
- * `whale_data$pixel_counts`.   
- * `whale_data$training_objects`.    
- * `whale_data$image_info`.  
+This creates a list of four elements:   
+    * `calibration_data$pixel_counts`.   
+    * `calibration_data$training_objects`.    
+    * `calibration_data$image_info`.
+    * `calibration_data$prediction_objects`
 
 
 ## Build sampler
@@ -328,12 +331,12 @@ output$summaries$altimeters
 
 ```
 ##   UAS altimeter parameter       mean         sd      lower    upper       ESS   PSS
-## 1  I2 Barometer      bias -0.6882732 1.59656625 -3.7604744 2.513038  2150.020 50001
-## 2  I2 Barometer  variance  5.4039580 1.13373192  3.4003570 7.688563 11476.559 50001
-## 3  I2 Barometer   scaling  1.0021574 0.04135610  0.9211188 1.082918  1668.345 50001
-## 4  I2     Laser      bias -0.4934563 1.62550664 -3.6925125 2.687646  2987.265 50001
-## 5  I2     Laser  variance  6.0400168 1.32049495  3.7547394 8.722513  3023.984 50001
-## 6  I2     Laser   scaling  0.9974185 0.04201405  0.9131557 1.078265  2230.490 50001
+## 1  I2 Barometer      bias -0.7203422 1.57906441 -3.7660942 2.423896  1906.974 50001
+## 2  I2 Barometer  variance  5.4004467 1.13193409  3.3639491 7.613621 12398.181 50001
+## 3  I2 Barometer   scaling  1.0032498 0.04093036  0.9236957 1.083940  1463.894 50001
+## 4  I2     Laser      bias -0.5243021 1.62965603 -3.5940199 2.778073  2475.701 50001
+## 5  I2     Laser  variance  6.0155576 1.30824124  3.7594362 8.681424  3291.101 50001
+## 6  I2     Laser   scaling  0.9983718 0.04207249  0.9144538 1.078665  1788.535 50001
 ```
 
 &nbsp;
@@ -354,7 +357,7 @@ output$summaries$images %>% left_join(co_data %>% rename(Image = image), by = "I
 ## Removed 8 rows containing missing values (`geom_pointrange()`).
 ```
 
-![plot of chunk posterior_vs_obs_alt](figure/posterior_vs_obs_alt-1.png)
+![plot of chunk Xc_Fig1_posterior_vs_obs_alt](img/Xc_Fig1_posterior_vs_obs_alt-1.png)
 
 &nbsp;
 
@@ -365,8 +368,8 @@ output$pixel_error$summary
 ```
 
 ```
-##   error parameter     mean       sd    lower    upper      ESS   PSS
-## 1 pixel  variance 18.80326 3.716424 12.23151 26.31403 19065.15 50001
+##   error parameter     mean      sd    lower    upper      ESS   PSS
+## 1 pixel  variance 18.74745 3.68237 12.24157 26.13657 19027.86 50001
 ```
 
 
@@ -380,12 +383,12 @@ head(output$summaries$objects)
 
 ```
 ##   Subject  Measurement Timepoint parameter      mean         sd     lower     upper      ESS   PSS
-## 1   GW_01        TL_px         1    length 12.542776 0.46152487 11.675528 13.461295 284.4521 50001
-## 2   GW_01 TL_w20.00_px         1    length  1.559732 0.06746948  1.431786  1.693538 399.4563 50001
-## 3   GW_01 TL_w25.00_px         1    length  1.918834 0.07876519  1.766705  2.072686 352.9220 50001
-## 4   GW_01 TL_w30.00_px         1    length  2.062525 0.08357291  1.905480  2.228896 358.9221 50001
-## 5   GW_01 TL_w35.00_px         1    length  2.127398 0.08544183  1.961836  2.292778 346.4746 50001
-## 6   GW_01 TL_w40.00_px         1    length  2.126797 0.08582707  1.964538  2.297160 350.1373 50001
+## 1   GW_01        TL_px         1    length 12.524335 0.48432091 11.605177 13.486068 247.0445 50001
+## 2   GW_01 TL_w20.00_px         1    length  1.557421 0.06986998  1.421111  1.693672 354.2822 50001
+## 3   GW_01 TL_w25.00_px         1    length  1.915799 0.08184221  1.755663  2.074863 312.8519 50001
+## 4   GW_01 TL_w30.00_px         1    length  2.059340 0.08710605  1.889557  2.229407 300.9867 50001
+## 5   GW_01 TL_w35.00_px         1    length  2.124176 0.08910634  1.953447  2.298639 306.4567 50001
+## 6   GW_01 TL_w40.00_px         1    length  2.123675 0.08898825  1.950219  2.296821 302.6361 50001
 ```
 
 &nbsp;
@@ -398,11 +401,11 @@ output$summaries$objects %>% filter(Measurement == "TL_px")
 
 ```
 ##   Subject Measurement Timepoint parameter      mean        sd     lower     upper       ESS   PSS
-## 1   GW_01       TL_px         1    length 12.542776 0.4615249 11.675528 13.461295 284.45214 50001
-## 2   GW_03       TL_px         1    length  8.407924 0.2256838  7.982222  8.867364 663.33389 50001
-## 3   GW_04       TL_px         1    length 11.134342 0.5432969 10.060102 12.158998 101.55269 50001
-## 4   GW_06       TL_px         1    length 10.085436 0.5689031  8.863936 11.129267  79.42259 50001
-## 5   GW_10       TL_px         1    length  9.645670 0.2254828  9.216750 10.079938 566.25073 50001
+## 1   GW_01       TL_px         1    length 12.524335 0.4843209 11.605177 13.486068 247.04452 50001
+## 2   GW_03       TL_px         1    length  8.388758 0.2217488  7.951812  8.820734 661.61972 50001
+## 3   GW_04       TL_px         1    length 11.076464 0.5931233  9.846138 12.232099  90.86436 50001
+## 4   GW_06       TL_px         1    length 10.083364 0.5566169  8.972447 11.189054  79.22054 50001
+## 5   GW_10       TL_px         1    length  9.642295 0.2222675  9.224671 10.086814 580.03644 50001
 ```
 
 &nbsp;
@@ -415,18 +418,18 @@ output$summaries$objects %>% filter(Subject == "GW_01")
 
 ```
 ##    Subject  Measurement Timepoint parameter       mean         sd      lower      upper      ESS   PSS
-## 1    GW_01        TL_px         1    length 12.5427759 0.46152487 11.6755275 13.4612954 284.4521 50001
-## 2    GW_01 TL_w20.00_px         1    length  1.5597320 0.06746948  1.4317855  1.6935385 399.4563 50001
-## 3    GW_01 TL_w25.00_px         1    length  1.9188336 0.07876519  1.7667054  2.0726863 352.9220 50001
-## 4    GW_01 TL_w30.00_px         1    length  2.0625250 0.08357291  1.9054798  2.2288956 358.9221 50001
-## 5    GW_01 TL_w35.00_px         1    length  2.1273984 0.08544183  1.9618356  2.2927784 346.4746 50001
-## 6    GW_01 TL_w40.00_px         1    length  2.1267969 0.08582707  1.9645378  2.2971596 350.1373 50001
-## 7    GW_01 TL_w45.00_px         1    length  2.0282105 0.08215694  1.8659629  2.1849793 343.0791 50001
-## 8    GW_01 TL_w50.00_px         1    length  1.8868603 0.07810011  1.7339707  2.0369335 354.9260 50001
-## 9    GW_01 TL_w55.00_px         1    length  1.6979374 0.07163007  1.5599329  1.8387609 384.7752 50001
-## 10   GW_01 TL_w60.00_px         1    length  1.3378351 0.06032142  1.2224423  1.4569941 445.7873 50001
-## 11   GW_01 TL_w65.00_px         1    length  1.1060404 0.05394088  1.0038898  1.2141803 498.6089 50001
-## 12   GW_01 TL_w70.00_px         1    length  0.9025897 0.04841474  0.8077024  0.9968621 590.9498 50001
+## 1    GW_01        TL_px         1    length 12.5243348 0.48432091 11.6051773 13.4860681 247.0445 50001
+## 2    GW_01 TL_w20.00_px         1    length  1.5574212 0.06986998  1.4211114  1.6936719 354.2822 50001
+## 3    GW_01 TL_w25.00_px         1    length  1.9157989 0.08184221  1.7556626  2.0748630 312.8519 50001
+## 4    GW_01 TL_w30.00_px         1    length  2.0593397 0.08710605  1.8895567  2.2294066 300.9867 50001
+## 5    GW_01 TL_w35.00_px         1    length  2.1241764 0.08910634  1.9534471  2.2986388 306.4567 50001
+## 6    GW_01 TL_w40.00_px         1    length  2.1236754 0.08898825  1.9502195  2.2968207 302.6361 50001
+## 7    GW_01 TL_w45.00_px         1    length  2.0252817 0.08576307  1.8535119  2.1883678 324.2996 50001
+## 8    GW_01 TL_w50.00_px         1    length  1.8840753 0.08067743  1.7292383  2.0439870 316.5492 50001
+## 9    GW_01 TL_w55.00_px         1    length  1.6956336 0.07438487  1.5523218  1.8433656 338.3559 50001
+## 10   GW_01 TL_w60.00_px         1    length  1.3357929 0.06237047  1.2158972  1.4593491 393.8830 50001
+## 11   GW_01 TL_w65.00_px         1    length  1.1042666 0.05542504  0.9977178  1.2149580 456.8998 50001
+## 12   GW_01 TL_w70.00_px         1    length  0.9011541 0.04933852  0.8044088  0.9975533 596.1318 50001
 ```
 
 &nbsp;
@@ -441,7 +444,7 @@ output$summaries$objects %>% filter(Measurement == "TL_px") %>%
   ylab("Total body length (m)") 
 ```
 
-![plot of chunk TL_per_subject](figure/TL_per_subject-1.png)
+![plot of chunk Xc_Fig2_TL_per_subject](img/Xc_Fig2_TL_per_subject-1.png)
 
 &nbsp;
 
@@ -454,7 +457,7 @@ data.frame(TL = ID_samples[(length(ID_samples)/2):length((ID_samples))]) %>%
   ggplot() + stat_halfeye(aes(TL), .width = 0.95) + theme_bw() 
 ```
 
-![plot of chunk TL_dist](figure/TL_dist-1.png)
+![plot of chunk Xc_Fig3_TL_dist](img/Xc_Fig3_TL_dist-1.png)
 
 
 &nbsp;
@@ -513,11 +516,11 @@ head(body_condition_output$summaries$body_area_index)
 
 ```
 ##   Subject Timepoint          metric     mean        sd    lower    upper
-## 1   GW_01         1 body_area_index 27.94237 0.1913553 27.56808 28.32022
-## 2   GW_03         1 body_area_index 29.64428 0.2199567 29.21673 30.08050
-## 3   GW_04         1 body_area_index 25.38543 0.1491689 25.08834 25.67508
-## 4   GW_06         1 body_area_index 29.02706 0.1556748 28.72508 29.33493
-## 5   GW_10         1 body_area_index 25.69877 0.1713716 25.35835 26.03205
+## 1   GW_01         1 body_area_index 27.94158 0.1899036 27.56974 28.31794
+## 2   GW_03         1 body_area_index 29.64340 0.2194318 29.20917 30.06942
+## 3   GW_04         1 body_area_index 25.38457 0.1493190 25.08816 25.67488
+## 4   GW_06         1 body_area_index 29.02524 0.1561085 28.71666 29.33080
+## 5   GW_10         1 body_area_index 25.69888 0.1715854 25.36228 26.03709
 ```
 
 &nbsp;
@@ -532,7 +535,7 @@ body_condition_output$summaries$body_area_index %>%
   ylab("Body Area Index") 
 ```
 
-![plot of chunk bai](figure/bai-1.png)
+![plot of chunk Xc_Fig4_bai](img/Xc_Fig4_bai-1.png)
 
 
 &nbsp;
@@ -546,11 +549,11 @@ head(body_condition_output$summaries$body_volume)
 
 ```
 ##   Subject Timepoint      metric     mean        sd     lower    upper
-## 1   GW_01         1 body_volume 7.238409 1.1255585 5.1369871 9.459041
-## 2   GW_03         1 body_volume 1.151305 0.2065895 0.7485787 1.554846
-## 3   GW_04         1 body_volume 3.046953 0.7616558 1.6794950 4.537799
-## 4   GW_06         1 body_volume 2.997819 0.8255005 1.3717405 4.573897
-## 5   GW_10         1 body_volume 1.392697 0.2124506 0.9977455 1.808321
+## 1   GW_01         1 body_volume 7.198659 1.1720632 5.0196814 9.562925
+## 2   GW_03         1 body_volume 1.133694 0.2024182 0.7568319 1.541614
+## 3   GW_04         1 body_volume 2.977343 0.8003176 1.3535517 4.498887
+## 4   GW_06         1 body_volume 2.991911 0.8302595 1.4202708 4.590484
+## 5   GW_10         1 body_volume 1.389413 0.2091401 0.9990588 1.804546
 ```
 
 &nbsp;
@@ -565,7 +568,7 @@ body_condition_output$summaries$body_volume %>%
   ylab("Body Volume (m^3)") 
 ```
 
-![plot of chunk body_vol](figure/body_vol-1.png)
+![plot of chunk Xc_Fig5_body_vol](img/Xc_Fig5_body_vol-1.png)
 
 &nbsp;
 
@@ -577,17 +580,17 @@ body_condition_output$summaries$standardized_widths %>% filter(Subject == "GW_01
 
 ```
 ##    Subject Timepoint                           metric       mean          sd      lower      upper
-## 1    GW_01         1 standardized_widths TL_w20.00_px 0.12435371 0.002853368 0.11876127 0.12998512
-## 2    GW_01         1 standardized_widths TL_w25.00_px 0.15298449 0.002852624 0.14736518 0.15855915
-## 3    GW_01         1 standardized_widths TL_w30.00_px 0.16444062 0.002864377 0.15878449 0.17007256
-## 4    GW_01         1 standardized_widths TL_w35.00_px 0.16961360 0.002857716 0.16408965 0.17528743
-## 5    GW_01         1 standardized_widths TL_w40.00_px 0.16956422 0.002851176 0.16397395 0.17512176
-## 6    GW_01         1 standardized_widths TL_w45.00_px 0.16170562 0.002856630 0.15624067 0.16742192
-## 7    GW_01         1 standardized_widths TL_w50.00_px 0.15043428 0.002860514 0.14475340 0.15595732
-## 8    GW_01         1 standardized_widths TL_w55.00_px 0.13537303 0.002852310 0.12976529 0.14099672
-## 9    GW_01         1 standardized_widths TL_w60.00_px 0.10666308 0.002825249 0.10106658 0.11216114
-## 10   GW_01         1 standardized_widths TL_w65.00_px 0.08818167 0.002826176 0.08251241 0.09365330
-## 11   GW_01         1 standardized_widths TL_w70.00_px 0.07196213 0.002834727 0.06630597 0.07745435
+## 1    GW_01         1 standardized_widths TL_w20.00_px 0.12435204 0.002844696 0.11869407 0.12988727
+## 2    GW_01         1 standardized_widths TL_w25.00_px 0.15296737 0.002843284 0.14751147 0.15869552
+## 3    GW_01         1 standardized_widths TL_w30.00_px 0.16442783 0.002858026 0.15871670 0.16996211
+## 4    GW_01         1 standardized_widths TL_w35.00_px 0.16960595 0.002875781 0.16397768 0.17528082
+## 5    GW_01         1 standardized_widths TL_w40.00_px 0.16956575 0.002845112 0.16389580 0.17501113
+## 6    GW_01         1 standardized_widths TL_w45.00_px 0.16170918 0.002870934 0.15611762 0.16742107
+## 7    GW_01         1 standardized_widths TL_w50.00_px 0.15043494 0.002861558 0.14486040 0.15607492
+## 8    GW_01         1 standardized_widths TL_w55.00_px 0.13538822 0.002852321 0.12975228 0.14090144
+## 9    GW_01         1 standardized_widths TL_w60.00_px 0.10665678 0.002825367 0.10123983 0.11232551
+## 10   GW_01         1 standardized_widths TL_w65.00_px 0.08816989 0.002824945 0.08265540 0.09373741
+## 11   GW_01         1 standardized_widths TL_w70.00_px 0.07195395 0.002827889 0.06639327 0.07756519
 ```
 
 &nbsp;
@@ -604,7 +607,7 @@ body_condition_output$summaries$standardized_widths %>% filter(Subject == "GW_01
   xlab("width%") + ylab("standardized width") + ggtitle("GW_01") 
 ```
 
-![plot of chunk std_widths](figure/std_widths-1.png)
+![plot of chunk Xc_Fig6_std_widths](img/Xc_Fig6_std_widths-1.png)
 
 
 &nbsp;
@@ -619,7 +622,7 @@ body_condition_output$summaries$standardized_widths %>%
   xlab("width%") + ylab("standardized width")
 ```
 
-![plot of chunk std_widths_all](figure/std_widths_all-1.png)
+![plot of chunk Xc_Fig7_std_widths_all](img/Xc_Fig7_std_widths_all-1.png)
 
 &nbsp;
 
@@ -630,7 +633,7 @@ head(body_condition_output$body_area_index$`GW_01`$samples)
 ```
 
 ```
-## [1] 164.5020 156.3537 123.5935 145.4273 140.7272 114.3155
+## [1] 161.2479 157.5936 138.5102 182.5054 218.5371 169.3383
 ```
 
 
@@ -644,7 +647,7 @@ data.frame(BAI = ID_samples[(length(ID_samples)/2):length((ID_samples))]) %>%
   ggplot() + stat_halfeye(aes(BAI), .width = 0.95) + theme_bw() + ggtitle("GW_01")
 ```
 
-![plot of chunk bai_dist](figure/bai_dist-1.png)
+![plot of chunk Xc_Fig8_bai_dist](img/Xc_Fig8_bai_dist-1.png)
 
 
 &nbsp;

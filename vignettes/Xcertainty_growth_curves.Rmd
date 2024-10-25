@@ -11,7 +11,7 @@ vignette: >
   \usepackage[utf8]{inputenc}
 fontsize: 13pt 
 author: "KC Bierlich & Josh Hewitt, CODEX"
-date: "2024-10-13"
+date: "2024-10-25"
 ---
 
 
@@ -88,10 +88,11 @@ calibration_data = parse_observations(
 )
 ```
 
-* This creates a list of three dataframes:   
-    + `calibration_data$pixel_counts`.   
-    + `calibration_data$training_objects`.    
-    + `calibration_data$image_info`.  
+This creates a list of four elements:   
+    * `calibration_data$pixel_counts`.   
+    * `calibration_data$training_objects`.    
+    * `calibration_data$image_info`.
+    * `calibration_data$prediction_objects`
 
 
 Next, we'll use `parse_observations()` to prepare the whale data. Note, that the `timepoint_col` is set to year since we are interested in the total body length of each individual summarized at the yearly scale. 
@@ -171,13 +172,15 @@ sampler = growth_curve_sampler(
 ## Joining with `by = join_by(altimeter)`
 ## Joining with `by = join_by(UAS, altimeter)`
 ## Defining model
-## [Note] Detected use of non-constant indexes: subject_group[1], subject_group[2], subject_group[3], subject_group[4], subject_group[5], subject_group[6],
-## subject_group[7], subject_group[8], subject_group[9], subject_group[10], subject_group[11], subject_group[12], subject_group[13], subject_group[14],
-## subject_group[15], subject_group[16], subject_group[17], subject_group[18], subject_group[19], subject_group[20], subject_group[21], subject_group[22],
-## subject_group[24], subject_group[25], subject_group[26], subject_group[27], subject_group[28], subject_group[29], subject_group[31], subject_group[32],
-## subject_group[33], subject_group[34], subject_group[35], subject_group[36], subject_group[37], subject_group[38], subject_group[39], subject_group[40],
-## subject_group[41], subject_group[42], subject_group[43], subject_group[44], subject_group[45], subject_group[46], subject_group[47], subject_group[48],
-## subject_group[49], subject_group[50], ... For computational efficiency we recommend specifying these in 'constants'.
+## [Note] Detected use of non-constant indexes: subject_group[1], subject_group[2], subject_group[3], subject_group[4],
+## subject_group[5], subject_group[6], subject_group[7], subject_group[8], subject_group[9], subject_group[10], subject_group[11],
+## subject_group[12], subject_group[13], subject_group[14], subject_group[15], subject_group[16], subject_group[17],
+## subject_group[18], subject_group[19], subject_group[20], subject_group[21], subject_group[22], subject_group[24],
+## subject_group[25], subject_group[26], subject_group[27], subject_group[28], subject_group[29], subject_group[31],
+## subject_group[32], subject_group[33], subject_group[34], subject_group[35], subject_group[36], subject_group[37],
+## subject_group[38], subject_group[39], subject_group[40], subject_group[41], subject_group[42], subject_group[43],
+## subject_group[44], subject_group[45], subject_group[46], subject_group[47], subject_group[48], subject_group[49],
+## subject_group[50], ... For computational efficiency we recommend specifying these in 'constants'.
 ## Building model
 ## Setting data and initial values
 ## Running calculate on model [Note] Any error reports that follow may simply reflect missing values in model variables.
@@ -273,13 +276,13 @@ head(output_growth$summaries$objects)
 ```
 
 ```
-##   Subject Measurement Timepoint parameter     mean        sd    lower    upper       ESS  PSS
-## 1       6      TL.pix      2020    length 13.46612 0.1229604 13.20953 13.70696 12.984632 5001
-## 2       6      TL.pix      2021    length 13.46671 0.1229490 13.20642 13.70382 12.981883 5001
-## 3      84      TL.pix      2017    length 12.29429 0.2611588 11.82116 12.76542  4.100977 5001
-## 4      84      TL.pix      2018    length 12.29633 0.2613655 11.82277 12.76716  4.091021 5001
-## 5      84      TL.pix      2020    length 12.29940 0.2616896 11.82643 12.77086  4.080244 5001
-## 6      87      TL.pix      2018    length 11.86318 0.2962057 11.24694 12.33210  5.230519 5001
+##   Subject Measurement Timepoint parameter     mean        sd    lower    upper      ESS  PSS
+## 1       6      TL.pix      2020    length 13.54185 0.1985569 13.20282 13.96650 3.648892 5001
+## 2       6      TL.pix      2021    length 13.54277 0.1985309 13.20351 13.96758 3.644688 5001
+## 3      84      TL.pix      2017    length 11.89351 0.2092283 11.58025 12.28971 4.847506 5001
+## 4      84      TL.pix      2018    length 11.89626 0.2091701 11.58301 12.29174 4.853066 5001
+## 5      84      TL.pix      2020    length 11.90045 0.2090914 11.58433 12.29310 4.870251 5001
+## 6      87      TL.pix      2018    length 11.53187 0.3861897 10.93358 12.26832 3.589867 5001
 ```
 
 
@@ -292,31 +295,31 @@ output_growth$summaries$altimeters
 ```
 
 ```
-##    UAS altimeter parameter       mean         sd      lower      upper        ESS  PSS
-## 1  I2F Barometer      bias -0.7657916 0.42329017 -1.5548130  0.0366860  136.93684 5001
-## 2  I2F Barometer  variance  3.5494599 0.28178490  3.0262148  4.1083104  423.01736 5001
-## 3  I2F Barometer   scaling  0.9858973 0.01005701  0.9677114  1.0054144  116.34449 5001
-## 4  I2F     Laser      bias -0.2219479 0.87396877 -1.8762869  1.4532594  108.80657 5001
-## 5  I2F     Laser  variance  5.0199766 0.64363170  3.8207695  6.2813462  134.35557 5001
-## 6  I2F     Laser   scaling  0.9587486 0.02014123  0.9205360  0.9979327  101.68899 5001
-## 7  I2O Barometer      bias  2.8099101 0.41705828  2.0660121  3.6801129   80.66925 5001
-## 8  I2O Barometer  variance  2.8164330 0.23040459  2.3650334  3.2681158  244.04878 5001
-## 9  I2O Barometer   scaling  0.9077929 0.01214954  0.8834502  0.9302366   57.57603 5001
-## 10 I2O     Laser      bias  1.8258200 0.52940856  0.7713228  2.8554556  115.96889 5001
-## 11 I2O     Laser  variance  2.4908160 0.29235744  1.9258622  3.0446303  173.42277 5001
-## 12 I2O     Laser   scaling  0.9205164 0.01578635  0.8916669  0.9546474  101.00099 5001
-## 13 P3P Barometer      bias  9.1356589 1.37467876  6.5521453 11.8844912   71.67811 5001
-## 14 P3P Barometer  variance  6.2525358 0.97228082  4.3888618  8.0744491  351.02109 5001
-## 15 P3P Barometer   scaling  0.7033574 0.05354301  0.5923213  0.8001202   69.38209 5001
-## 16 P4P Barometer      bias 11.1573089 0.73608444  9.8830030 12.7273361   48.20939 5001
-## 17 P4P Barometer  variance  3.8350990 0.29518056  3.2626934  4.4080264  971.44248 5001
-## 18 P4P Barometer   scaling  0.6317132 0.02969604  0.5682184  0.6842163   48.34513 5001
-## 19 P4P     Laser      bias  9.6090170 5.42354767 -0.4678810 20.1408459   57.40420 5001
-## 20 P4P     Laser  variance 37.0115577 7.22949843 23.9370206 51.4092210 3286.13379 5001
-## 21 P4P     Laser   scaling  0.7689800 0.21753218  0.3545531  1.1832203   56.06666 5001
-## 22 P4S Barometer      bias 19.4632203 1.95577601 15.8607367 23.3741740   99.07682 5001
-## 23 P4S Barometer  variance  9.8557192 1.76102283  6.8484457 13.4674244 3800.05856 5001
-## 24 P4S Barometer   scaling  0.3129661 0.07861159  0.1599713  0.4616343   93.74616 5001
+##    UAS altimeter parameter       mean          sd      lower       upper        ESS  PSS
+## 1  I2F Barometer      bias -0.6932355 0.398973712 -1.4717383  0.04456479  149.88080 5001
+## 2  I2F Barometer  variance  3.6449296 0.300490967  3.0821436  4.25333109  235.36005 5001
+## 3  I2F Barometer   scaling  0.9844252 0.009450076  0.9667009  1.00300162  136.50978 5001
+## 4  I2F     Laser      bias -0.3053682 0.922372408 -1.9943995  1.61419416   93.22852 5001
+## 5  I2F     Laser  variance  5.0352375 0.617755578  3.9220960  6.28957815  340.96167 5001
+## 6  I2F     Laser   scaling  0.9609646 0.021442989  0.9184164  1.00242382   87.81790 5001
+## 7  I2O Barometer      bias  2.7492515 0.461517851  1.8254702  3.59784737   95.32337 5001
+## 8  I2O Barometer  variance  2.8543303 0.226039156  2.4083769  3.28752072  871.56550 5001
+## 9  I2O Barometer   scaling  0.9075059 0.013143414  0.8819154  0.93216352   85.63239 5001
+## 10 I2O     Laser      bias  1.8976043 0.516853188  0.8995315  2.94631381  123.86688 5001
+## 11 I2O     Laser  variance  2.4426358 0.285409345  1.9167921  3.02070223  262.26641 5001
+## 12 I2O     Laser   scaling  0.9174396 0.014856556  0.8872060  0.94596523  108.58109 5001
+## 13 P3P Barometer      bias  8.3631562 1.415399460  5.6000919 11.27420769   64.48248 5001
+## 14 P3P Barometer  variance  5.9105083 0.932656799  4.1953405  7.75633616  196.92264 5001
+## 15 P3P Barometer   scaling  0.7332374 0.056165102  0.6170686  0.84242168   60.80028 5001
+## 16 P4P Barometer      bias 11.4961974 0.714895359 10.1917164 12.93181275   51.48820 5001
+## 17 P4P Barometer  variance  3.9201840 0.302881357  3.3538498  4.53706521 1038.37449 5001
+## 18 P4P Barometer   scaling  0.6160033 0.028945303  0.5602674  0.67162133   54.17208 5001
+## 19 P4P     Laser      bias  8.6725336 4.962632714 -0.9395999 18.56536773   61.59509 5001
+## 20 P4P     Laser  variance 36.5550353 7.106835707 23.7180099 50.13285478 3903.88387 5001
+## 21 P4P     Laser   scaling  0.8072348 0.199088092  0.3966834  1.17697114   60.97122 5001
+## 22 P4S Barometer      bias 19.1403361 2.104913863 15.0893382 23.02336886   71.31543 5001
+## 23 P4S Barometer  variance  9.6368671 1.736014463  6.4241676 12.92739681 3044.87824 5001
+## 24 P4S Barometer   scaling  0.3228527 0.083469238  0.1620232  0.48128905   72.41114 5001
 ```
 
 We can view the posterior summaries of the pixel variance
@@ -327,8 +330,9 @@ output_growth$pixel_error$summary
 
 ```
 ##   error parameter     mean       sd    lower    upper      ESS  PSS
-## 1 pixel  variance 12.29105 3.202259 6.652635 18.61714 23.98477 5001
+## 1 pixel  variance 12.08068 2.548511 7.561632 17.31028 35.25218 5001
 ```
+
 
 &nbsp;
 
@@ -340,17 +344,18 @@ output_growth$summaries$growth_curve[1:10,]
 
 ```
 ##                             parameter          mean          sd         lower         upper        ESS  PSS
-## 1                     zero_length_age   -6.49103598 0.170597788   -6.85508692   -6.22350029   1.649540 5001
-## 2                         growth_rate    0.19337211 0.005476867    0.18487255    0.20150978   1.254382 5001
-## 3        Female group_asymptotic_size   12.89885200 0.206754090   12.51025734   13.27186801   8.267542 5001
-## 4          Male group_asymptotic_size   12.02597451 0.119321843   11.80133864   12.26157746 151.320452 5001
-## 5  Female group_asymptotic_size_trend   -0.16827129 0.075617616   -0.31904100   -0.05961210  29.847742 5001
-## 6    Male group_asymptotic_size_trend   -0.02400296 0.027155490   -0.06928842    0.03783454  85.784208 5001
-## 7                        6 birth_year 1982.90534735 2.826534267 1976.76509911 1984.99880549 134.649951 5001
-## 8                       84 birth_year 1986.28453959 4.911944566 1977.30208672 1988.99989043  36.250824 5001
-## 9                       87 birth_year 1989.11808410 5.462169860 1977.22068263 1991.99798049  36.169864 5001
-## 10                      89 birth_year 1990.00437717 2.887303540 1984.42877355 1991.98857888 128.013575 5001
+## 1                     zero_length_age   -6.31087884 0.178573714   -6.59999010   -6.08336690   1.668323 5001
+## 2                         growth_rate    0.18366117 0.001650781    0.18050765    0.18656065   3.583295 5001
+## 3        Female group_asymptotic_size   12.90739369 0.127315172   12.64422380   13.15208812 136.792747 5001
+## 4          Male group_asymptotic_size   12.09146517 0.122350016   11.85525341   12.33455322 577.459902 5001
+## 5  Female group_asymptotic_size_trend   -0.18008073 0.086315748   -0.33468881   -0.05831142  50.890964 5001
+## 6    Male group_asymptotic_size_trend    0.03375674 0.056447975   -0.05420489    0.14708012  22.131012 5001
+## 7                        6 birth_year 1983.43579868 2.435478244 1979.51369403 1984.99976719 103.142927 5001
+## 8                       84 birth_year 1986.12884733 5.989339943 1973.40716535 1988.99870115  26.972659 5001
+## 9                       87 birth_year 1990.26150797 2.456269926 1985.93629851 1991.99989038 130.553853 5001
+## 10                      89 birth_year 1989.45978298 4.770082798 1980.73838239 1991.99940113  47.713679 5001
 ```
+
 
 &nbsp;
 
@@ -375,6 +380,7 @@ sum <- sums_L %>%
          Age_est_upper = Year - birth_year_lower)
 ```
 
+
 &nbsp;
 
 ## Plot Growth Curves
@@ -388,7 +394,8 @@ ggplot() + theme_bw() +
   xlab("estimated age") + ylab("total body length (m)") 
 ```
 
-![plot of chunk length&age](img/length&age-1.png)
+![plot of chunk Xc_Gr_length_age](img/Xc_Gr_length_age-1.png)
+
 
 &nbsp; 
 
@@ -449,7 +456,8 @@ ggplot() + theme_bw() +
                  aes(xmin = Age_est_lower, xmax = Age_est_upper, y = mean, color = sex), lty = 3) 
 ```
 
-![plot of chunk growth_curves](img/growth_curves-1.png)
+![plot of chunk Xc_Gr_growth_curves](img/Xc_Gr_growth_curves-1.png)
+
 
 &nbsp;
 

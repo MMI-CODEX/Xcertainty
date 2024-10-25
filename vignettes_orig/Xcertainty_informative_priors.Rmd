@@ -11,7 +11,7 @@ vignette: >
   \usepackage[utf8]{inputenc}
 fontsize: 13pt 
 author: "KC Bierlich & Josh Hewitt, CODEX"
-date: "2024-10-13"
+date: "2024-10-25"
 ---
 
 ```{r setup, include=FALSE}
@@ -78,10 +78,11 @@ calibration_data = parse_observations(
 )
 ```
 
-This creates a list of three dataframes:   
+This creates a list of four elements:   
     * `calibration_data$pixel_counts`.   
     * `calibration_data$training_objects`.    
-    * `calibration_data$image_info`.    
+    * `calibration_data$image_info`.
+    * `calibration_data$prediction_objects` 
  
 
 ### Gray whale measurements
@@ -134,10 +135,11 @@ whale_data = parse_observations(
 ```
 
   
-This creates a list of three dataframes:   
- * `whale_data$pixel_counts`.   
- * `whale_data$training_objects`.    
- * `whale_data$image_info`.  
+This creates a list of four elements:   
+    * `calibration_data$pixel_counts`.   
+    * `calibration_data$training_objects`.    
+    * `calibration_data$image_info`.
+    * `calibration_data$prediction_objects`
 
 
 ## Build sampler (non-informative priors)
@@ -190,7 +192,7 @@ output$summaries$altimeters
 Note that the bias and variance is very large. 
 
 When we view and compare the posterior outputs for each image's altitude compared to the observed altitude from the barometer (dashed line represents 1:1), the altitudes are way off with extremely large uncertainty.
-```{r, poster_vs_obs_alt_P4P, fig.dim = c(7, 5)}
+```{r, Xc_Inf_Fig1_posterior_vs_obs_alt_P4P, fig.dim = c(7, 5)}
 output$summaries$images %>% left_join(co_data %>% rename(Image = image), by = "Image") %>%
   ggplot() + theme_bw() + 
   geom_pointrange(aes(x = Baro_Alt, y = mean, ymin = lower, ymax = upper), color = "blue") +
@@ -222,7 +224,7 @@ output$summaries$objects %>% filter(Measurement == "TL_px")
 ```
 
 
-```{r, TL_output_wonky, fig.dim = c(7, 5)}
+```{r, Xc_Inf_Fig2_TL_output_wonky, fig.dim = c(7, 5)}
 output$summaries$objects %>% filter(Measurement == "TL_px") %>% 
   ggplot() + theme_bw() + 
   geom_pointrange(aes(x = Subject, y = mean, ymin =lower, ymax = upper)) + 
@@ -244,7 +246,7 @@ gw_data %>% filter(uas == "P4P") %>%
 ```
 
 Let's next make sure there are no outliers in the altitude from the training data. If so, we can try removing them. We'll use the known size of the calibration object (CO.L) to calculate the "true", or expected, altitude, and then calculate the percent difference between the observed vs. true altitude. From looking at the data, it does not appear that there are extreme outliers. 
-```{r, baro_vs_true_alt, fig.dim = c(7, 5)}
+```{r, Xc_Inf_Fig3_baro_vs_true_alt, fig.dim = c(7, 5)}
 co_data_p4p %>% 
   mutate(alt_true = (CO.L*Focal_Length_adj)/((Sw/Iw)*Lpix),
          perDiff = ((Baro_Alt - alt_true)/alt_true)*100) %>%
@@ -365,7 +367,7 @@ output_informative$summaries$objects %>% filter(Measurement == "TL_px")
 
 
 Now let's plot total body length with associated uncertainty for each individual. The lengths look much more reasonable now. There is large uncertainty around each point, but this is expected, as the P4P is susceptible to high error.
-```{r, TL_output_informative, fig.dim = c(7, 5)}
+```{r, Xc_Inf_Fig4_TL_output_informative, fig.dim = c(7, 5)}
 output_informative$summaries$objects %>% filter(Measurement == "TL_px") %>% 
   ggplot() + theme_bw() + 
   geom_pointrange(aes(x = Subject, y = mean, ymin =lower, ymax = upper)) + 

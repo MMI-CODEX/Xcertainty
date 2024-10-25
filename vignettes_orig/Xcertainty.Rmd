@@ -11,7 +11,7 @@ vignette: >
   \usepackage[utf8]{inputenc}
 fontsize: 13pt 
 author: "KC Bierlich & Josh Hewitt, CODEX"
-date: "2024-10-13"
+date: "2024-10-25"
 ---
 
 ```{r setup, include=FALSE}
@@ -112,10 +112,11 @@ calibration_data = parse_observations(
 )
 ```
 
-This creates a list of three dataframes:   
+This creates a list of four elements:   
     * `calibration_data$pixel_counts`.   
     * `calibration_data$training_objects`.    
-    * `calibration_data$image_info`.    
+    * `calibration_data$image_info`.
+    * `calibration_data$prediction_objects`
  
 
 ### Gray whale measurements
@@ -175,10 +176,11 @@ whale_data = parse_observations(
 ```
 
   
-This creates a list of three dataframes:   
- * `whale_data$pixel_counts`.   
- * `whale_data$training_objects`.    
- * `whale_data$image_info`.  
+This creates a list of four elements:   
+    * `calibration_data$pixel_counts`.   
+    * `calibration_data$training_objects`.    
+    * `calibration_data$image_info`.
+    * `calibration_data$prediction_objects`
 
 
 ## Build sampler
@@ -229,7 +231,7 @@ output$summaries$altimeters
 &nbsp;
 
 And we can view and compare the posterior outputs for each image's altitude compared to the observed altitude from the barometer (blue) and LiDAR (orange) in the training dataset.
-```{r, posterior_vs_obs_alt, fig.dim = c(7, 5)}
+```{r, Xc_Fig1_posterior_vs_obs_alt, fig.dim = c(7, 5)}
 output$summaries$images %>% left_join(co_data %>% rename(Image = image), by = "Image") %>%
   ggplot() + theme_bw() + 
   geom_pointrange(aes(x = Baro_Alt, y = mean, ymin = lower, ymax = upper), color = "blue") + 
@@ -271,7 +273,7 @@ output$summaries$objects %>% filter(Subject == "GW_01")
 &nbsp;
 
 Plot total body length with associated uncertainty for each individual. Here the black dots represent the mean of the posterior distribution for total body length and the black bars around each dot represents the uncertainty, as 95% HPDI.  
-```{r, TL_per_subject, fig.dim = c(7, 5)}
+```{r, Xc_Fig2_TL_per_subject, fig.dim = c(7, 5)}
 output$summaries$objects %>% filter(Measurement == "TL_px") %>% 
   ggplot() + theme_bw() + 
   geom_pointrange(aes(x = Subject, y = mean, ymin =lower, ymax = upper)) + 
@@ -282,7 +284,7 @@ output$summaries$objects %>% filter(Measurement == "TL_px") %>%
 &nbsp;
 
 You can also view and plot the posterior samples for an individual's measurement. Note, be sure to exclude the first half of the posterior samples, i.e., if 10000 samples, exclude the first 5000. To demonstrate this below, we'll first save the samples for an individual as an object, then plot the distribution with the first half of the samples excluded. 
-```{r, TL_dist, fig.dim = c(6, 6)}
+```{r, Xc_Fig3_TL_dist, fig.dim = c(6, 6)}
 ID_samples <- output$objects$`GW_01 TL_px 1`$samples
 
 data.frame(TL = ID_samples[(length(ID_samples)/2):length((ID_samples))]) %>%
@@ -345,7 +347,7 @@ head(body_condition_output$summaries$body_area_index)
 &nbsp;
 
 Plot BAI results 
-```{r, bai, fig.dim = c(7, 5)}
+```{r, Xc_Fig4_bai, fig.dim = c(7, 5)}
 body_condition_output$summaries$body_area_index %>% 
   ggplot() + theme_bw() + 
   geom_pointrange(aes(x = Subject, y = mean, ymin =lower, ymax = upper)) + 
@@ -365,7 +367,7 @@ head(body_condition_output$summaries$body_volume)
 &nbsp;
 
 Plot Body Volume results 
-```{r, body_vol, fig.dim = c(7, 5)}
+```{r, Xc_Fig5_body_vol, fig.dim = c(7, 5)}
 body_condition_output$summaries$body_volume %>% 
   ggplot() + theme_bw() + 
   geom_pointrange(aes(x = Subject, y = mean, ymin =lower, ymax = upper)) + 
@@ -383,7 +385,7 @@ body_condition_output$summaries$standardized_widths %>% filter(Subject == "GW_01
 &nbsp;
 
 Plot standardized widths of an individual
-```{r, std_widths, fig.dim = c(7, 5)}
+```{r, Xc_Fig6_std_widths, fig.dim = c(7, 5)}
 body_condition_output$summaries$standardized_widths$metric <- gsub("standardized_widths TL_", "", body_condition_output$summaries$standardized_widths$metric)
 
 body_condition_output$summaries$standardized_widths %>% filter(Subject == "GW_01") %>%
@@ -397,7 +399,7 @@ body_condition_output$summaries$standardized_widths %>% filter(Subject == "GW_01
 &nbsp;
 
 Can also view standardized widths across all individuals
-```{r, std_widths_all, fig.dim = c(7, 5)}
+```{r, Xc_Fig7_std_widths_all, fig.dim = c(7, 5)}
 body_condition_output$summaries$standardized_widths %>% 
   ggplot() + theme_bw() + 
   geom_boxplot(aes(x = metric, y = mean)) + 
@@ -415,7 +417,7 @@ head(body_condition_output$body_area_index$`GW_01`$samples)
 
 
 And from these posterior samples for an individual, we can plot the distribution. Here we'll plot BAI as an example, and include the 95% HPDI. Remember to exclude the first half of the samples, as mentioned above. 
-```{r, bai_dist, fig.dim = c(6, 6)}
+```{r, Xc_Fig8_bai_dist, fig.dim = c(6, 6)}
 ID_samples <- body_condition_output$body_area_index$`GW_01 1`$samples
   
 data.frame(BAI = ID_samples[(length(ID_samples)/2):length((ID_samples))]) %>%

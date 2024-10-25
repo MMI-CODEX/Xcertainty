@@ -11,7 +11,7 @@ vignette: >
   \usepackage[utf8]{inputenc}
 fontsize: 13pt 
 author: "KC Bierlich & Josh Hewitt, CODEX"
-date: "2024-10-13"
+date: "2024-10-25"
 ---
 
 
@@ -86,10 +86,11 @@ calibration_data = parse_observations(
 )
 ```
 
-This creates a list of three dataframes:   
+This creates a list of four elements:   
     * `calibration_data$pixel_counts`.   
     * `calibration_data$training_objects`.    
-    * `calibration_data$image_info`.    
+    * `calibration_data$image_info`.
+    * `calibration_data$prediction_objects` 
  
 
 ### Gray whale measurements
@@ -121,18 +122,18 @@ gw_measurements
 
 ```
 ## # A tibble: 7 × 26
-##   whale_ID image     year   DOY uas   Focal…¹ Focal…²    Sw    Iw Baro_…³ Launc…⁴ Baro_…⁵ Laser…⁶ CO.ID TL_px TL_w2…⁷ TL_w2…⁸ TL_w3…⁹ TL_w3…˟ TL_w4…˟ TL_w4…˟
-##   <chr>    <chr>    <int> <int> <chr>   <dbl>   <dbl> <dbl> <int>   <dbl>   <dbl>   <dbl>   <dbl> <chr> <dbl>   <dbl>   <dbl>   <dbl>   <dbl>   <dbl>   <dbl>
-## 1 GW_02    image_0…  2019   249 P4P       8.8     9.2  13.2  3840    25.6    1.72    27.3      NA CO_P… 1185.    151.    169.    197.    214.    230.    227.
-## 2 GW_02    image_0…  2019   249 P4P       8.8     9.2  13.2  3840    25.6    1.72    27.3      NA CO_P… 1203.    151.    181.    202.    214.    220.    222.
-## 3 GW_05    image_0…  2019   203 P4P       8.8     9.2  13.2  3840    25.5    1.72    27.2      NA CO_P…  986.    115.    130.    148.    161.    166.    169.
-## 4 GW_05    image_0…  2019   203 P4P       8.8     9.2  13.2  3840    25.5    1.72    27.2      NA CO_P…  957.    125.    140.    158.    171.    169.    156.
-## 5 GW_07    image_1…  2019   280 P4P       8.8     9.2  13.2  3840    24.7    1.72    26.4      NA CO_P… 1023.    121.    137.    155.    161.    168.    159.
-## 6 GW_08    image_0…  2019   280 P4P       8.8     9.2  13.2  3840    25.5    1.72    27.2      NA CO_P… 1020.    123.    132.    144.    147.    147.    138.
-## 7 GW_09    image_0…  2019   180 P4P       8.8     9.2  13.2  3840    25.5    1.72    27.2      NA CO_P…  928.    104.    116.    131.    141.    145.    146.
-## # … with 5 more variables: TL_w50.00_px <dbl>, TL_w55.00_px <dbl>, TL_w60.00_px <dbl>, TL_w65.00_px <dbl>, TL_w70.00_px <dbl>, and abbreviated variable
-## #   names ¹​Focal_Length, ²​Focal_Length_adj, ³​Baro_raw, ⁴​Launch_Ht, ⁵​Baro_Alt, ⁶​Laser_Alt, ⁷​TL_w20.00_px, ⁸​TL_w25.00_px, ⁹​TL_w30.00_px, ˟​TL_w35.00_px,
-## #   ˟​TL_w40.00_px, ˟​TL_w45.00_px
+##   whale_ID image   year   DOY uas   Focal…¹ Focal…²    Sw    Iw Baro_…³ Launc…⁴ Baro_…⁵ Laser…⁶ CO.ID TL_px TL_w2…⁷ TL_w2…⁸ TL_w3…⁹
+##   <chr>    <chr>  <int> <int> <chr>   <dbl>   <dbl> <dbl> <int>   <dbl>   <dbl>   <dbl>   <dbl> <chr> <dbl>   <dbl>   <dbl>   <dbl>
+## 1 GW_02    image…  2019   249 P4P       8.8     9.2  13.2  3840    25.6    1.72    27.3      NA CO_P… 1185.    151.    169.    197.
+## 2 GW_02    image…  2019   249 P4P       8.8     9.2  13.2  3840    25.6    1.72    27.3      NA CO_P… 1203.    151.    181.    202.
+## 3 GW_05    image…  2019   203 P4P       8.8     9.2  13.2  3840    25.5    1.72    27.2      NA CO_P…  986.    115.    130.    148.
+## 4 GW_05    image…  2019   203 P4P       8.8     9.2  13.2  3840    25.5    1.72    27.2      NA CO_P…  957.    125.    140.    158.
+## 5 GW_07    image…  2019   280 P4P       8.8     9.2  13.2  3840    24.7    1.72    26.4      NA CO_P… 1023.    121.    137.    155.
+## 6 GW_08    image…  2019   280 P4P       8.8     9.2  13.2  3840    25.5    1.72    27.2      NA CO_P… 1020.    123.    132.    144.
+## 7 GW_09    image…  2019   180 P4P       8.8     9.2  13.2  3840    25.5    1.72    27.2      NA CO_P…  928.    104.    116.    131.
+## # … with 8 more variables: TL_w35.00_px <dbl>, TL_w40.00_px <dbl>, TL_w45.00_px <dbl>, TL_w50.00_px <dbl>, TL_w55.00_px <dbl>,
+## #   TL_w60.00_px <dbl>, TL_w65.00_px <dbl>, TL_w70.00_px <dbl>, and abbreviated variable names ¹​Focal_Length, ²​Focal_Length_adj,
+## #   ³​Baro_raw, ⁴​Launch_Ht, ⁵​Baro_Alt, ⁶​Laser_Alt, ⁷​TL_w20.00_px, ⁸​TL_w25.00_px, ⁹​TL_w30.00_px
 ```
 
 
@@ -160,10 +161,11 @@ whale_data = parse_observations(
 ```
 
   
-This creates a list of three dataframes:   
- * `whale_data$pixel_counts`.   
- * `whale_data$training_objects`.    
- * `whale_data$image_info`.  
+This creates a list of four elements:   
+    * `calibration_data$pixel_counts`.   
+    * `calibration_data$training_objects`.    
+    * `calibration_data$image_info`.
+    * `calibration_data$prediction_objects`
 
 
 ## Build sampler (non-informative priors)
@@ -209,13 +211,13 @@ sampler = independent_length_sampler(
 ## ===== Monitors =====
 ## thin = 1: altimeter_bias, altimeter_scaling, altimeter_variance, image_altitude, object_length, pixel_variance
 ## ===== Samplers =====
-## RW sampler (117)
-##   - image_altitude[]  (57 elements)
+## RW sampler (136)
+##   - image_altitude[]  (76 elements)
 ##   - object_length[]  (60 elements)
-## conjugate sampler (7)
-##   - altimeter_bias[]  (2 elements)
-##   - altimeter_scaling[]  (2 elements)
-##   - altimeter_variance[]  (2 elements)
+## conjugate sampler (4)
+##   - altimeter_bias[]  (1 element)
+##   - altimeter_scaling[]  (1 element)
+##   - altimeter_variance[]  (1 element)
 ##   - pixel_variance
 ```
 
@@ -277,13 +279,10 @@ output$summaries$altimeters
 ```
 
 ```
-##   UAS altimeter parameter       mean         sd      lower    upper      ESS   PSS
-## 1  I2 Barometer      bias -0.7127096 1.58932014 -3.8031033 2.455798 2000.290 50001
-## 2  I2 Barometer  variance  5.3992663 1.13764314  3.3858031 7.656946 8348.773 50001
-## 3  I2 Barometer   scaling  1.0022806 0.04129523  0.9214487 1.083462 1481.785 50001
-## 4  I2     Laser      bias -0.4752213 1.63098898 -3.6564912 2.749217 2750.569 50001
-## 5  I2     Laser  variance  6.0715704 1.31790463  3.7847879 8.729066 3002.456 50001
-## 6  I2     Laser   scaling  0.9964931 0.04213887  0.9135947 1.078784 1982.081 50001
+##   UAS altimeter parameter        mean         sd      lower      upper      ESS   PSS
+## 1 P4P Barometer      bias 22.24519388 1.06820010 20.1786000 24.3794205 22330.09 50001
+## 2 P4P Barometer  variance 11.98614788 2.62266479  7.3401890 17.3008615 31093.82 50001
+## 3 P4P Barometer   scaling  0.08441322 0.02036686  0.0438131  0.1242809 16056.95 50001
 ```
 
 &nbsp;
@@ -301,10 +300,10 @@ output$summaries$images %>% left_join(co_data %>% rename(Image = image), by = "I
 ```
 
 ```
-## Warning: Removed 8 rows containing missing values (`geom_pointrange()`).
+## Warning: Removed 7 rows containing missing values (`geom_pointrange()`).
 ```
 
-![plot of chunk poster_vs_obs_alt_P4P](img/poster_vs_obs_alt_P4P-1.png)
+![plot of chunk Xc_Inf_Fig1_posterior_vs_obs_alt_P4P](img/Xc_Inf_Fig1_posterior_vs_obs_alt_P4P-1.png)
 
 &nbsp;
 
@@ -316,7 +315,7 @@ output$pixel_error$summary
 
 ```
 ##   error parameter     mean       sd    lower    upper      ESS   PSS
-## 1 pixel  variance 18.81583 3.722385 12.22056 26.34165 17653.12 50001
+## 1 pixel  variance 1850.554 424.1212 1061.015 2709.165 16096.64 50001
 ```
 
 
@@ -329,13 +328,13 @@ head(output$summaries$objects)
 ```
 
 ```
-##   Subject  Measurement Timepoint parameter      mean         sd     lower     upper      ESS   PSS
-## 1   GW_01        TL_px         1    length 12.555545 0.48704796 11.575160 13.505501 243.1464 50001
-## 2   GW_01 TL_w20.00_px         1    length  1.561236 0.06995057  1.422562  1.698373 358.1524 50001
-## 3   GW_01 TL_w25.00_px         1    length  1.920606 0.08238801  1.759192  2.084941 325.5866 50001
-## 4   GW_01 TL_w30.00_px         1    length  2.064774 0.08760304  1.894536  2.240992 294.6102 50001
-## 5   GW_01 TL_w35.00_px         1    length  2.129054 0.08953702  1.952838  2.306796 307.0597 50001
-## 6   GW_01 TL_w40.00_px         1    length  2.129249 0.08961719  1.953301  2.307159 301.6908 50001
+##   Subject  Measurement Timepoint parameter      mean        sd     lower     upper      ESS   PSS
+## 1   GW_02        TL_px         1    length 18.789872 1.1328652 16.499145 19.999969  3750.92 50001
+## 2   GW_02 TL_w20.00_px         1    length  2.395916 0.5094549  1.389444  3.397798 24598.71 50001
+## 3   GW_02 TL_w25.00_px         1    length  2.788554 0.5199009  1.746753  3.789732 19600.28 50001
+## 4   GW_02 TL_w30.00_px         1    length  3.173386 0.5274546  2.117954  4.189383 18091.48 50001
+## 5   GW_02 TL_w35.00_px         1    length  3.412611 0.5338669  2.345618  4.457003 15920.45 50001
+## 6   GW_02 TL_w40.00_px         1    length  3.576457 0.5392102  2.503837  4.631474 14575.25 50001
 ```
 
 &nbsp;
@@ -347,12 +346,12 @@ output$summaries$objects %>% filter(Measurement == "TL_px")
 ```
 
 ```
-##   Subject Measurement Timepoint parameter      mean        sd     lower    upper       ESS   PSS
-## 1   GW_01       TL_px         1    length 12.555545 0.4870480 11.575160 13.50550 243.14637 50001
-## 2   GW_03       TL_px         1    length  8.407687 0.2183205  7.986385  8.83699 675.38916 50001
-## 3   GW_04       TL_px         1    length 11.175770 0.6021496  9.960727 12.35394  86.85540 50001
-## 4   GW_06       TL_px         1    length 10.139998 0.5692372  9.059978 11.37050  74.45342 50001
-## 5   GW_10       TL_px         1    length  9.662577 0.2231506  9.233452 10.09427 594.96188 50001
+##   Subject Measurement Timepoint parameter     mean       sd    lower    upper      ESS   PSS
+## 1   GW_02       TL_px         1    length 18.78987 1.132865 16.49915 19.99997 3750.920 50001
+## 2   GW_05       TL_px         1    length 18.71153 1.190831 16.30884 19.99997 5523.588 50001
+## 3   GW_07       TL_px         1    length 18.58505 1.312568 15.93209 19.99995 7159.147 50001
+## 4   GW_08       TL_px         1    length 18.60401 1.298223 16.01149 19.99999 7233.610 50001
+## 5   GW_09       TL_px         1    length 18.57909 1.305167 15.92239 19.99999 9730.992 50001
 ```
 
 
@@ -365,7 +364,7 @@ output$summaries$objects %>% filter(Measurement == "TL_px") %>%
   ylab("Total body length (m)") 
 ```
 
-![plot of chunk TL_output_wonky](img/TL_output_wonky-1.png)
+![plot of chunk Xc_Inf_Fig2_TL_output_wonky](img/Xc_Inf_Fig2_TL_output_wonky-1.png)
 
 &nbsp;
 
@@ -405,7 +404,7 @@ co_data_p4p %>%
   geom_abline(intercept = 0, slope =1, lty = 2)
 ```
 
-![plot of chunk baro_vs_true_alt](img/baro_vs_true_alt-1.png)
+![plot of chunk Xc_Inf_Fig3_baro_vs_true_alt](img/Xc_Inf_Fig3_baro_vs_true_alt-1.png)
 
 &nbsp;
 
@@ -516,9 +515,9 @@ output_calibration$altimeters$`P4P Barometer`$summary
 
 ```
 ##   UAS altimeter parameter      mean         sd      lower    upper       ESS   PSS
-## 1 P4P Barometer      bias 1.6728798 2.00933678 -2.1906832 5.706137  3989.429 50001
-## 2 P4P Barometer  variance 4.7770209 0.93046863  3.1518823 6.670030 36761.666 50001
-## 3 P4P Barometer   scaling 0.9658329 0.07899958  0.8145092 1.125641  4046.854 50001
+## 1 P4P Barometer      bias 1.7450990 2.03251827 -2.2036777 5.740842  3963.654 50001
+## 2 P4P Barometer  variance 4.7735639 0.92268221  3.1632828 6.656940 36398.094 50001
+## 3 P4P Barometer   scaling 0.9629214 0.07987979  0.8093883 1.122521  3922.058 50001
 ```
 
 
@@ -635,10 +634,10 @@ output_informative$altimeters$`P4P Barometer`$summary
 ```
 
 ```
-##   UAS altimeter parameter      mean        sd      lower    upper       ESS   PSS
-## 1 P4P Barometer      bias 0.8032697 0.8638207 -0.9137631 2.468331 12344.725 50001
-## 2 P4P Barometer  variance 5.3149337 1.1112541  3.3184489 7.505209  1280.483 50001
-## 3 P4P Barometer   scaling 0.9849826 0.0358294  0.9162972 1.056427  3946.923 50001
+##   UAS altimeter parameter      mean         sd      lower    upper       ESS   PSS
+## 1 P4P Barometer      bias 0.8110562 0.86257866 -0.9637525 2.444341 9734.3838 50001
+## 2 P4P Barometer  variance 5.3583428 1.13272690  3.4124563 7.660169  942.7461 50001
+## 3 P4P Barometer   scaling 0.9841356 0.03599979  0.9140389 1.055241 2964.6756 50001
 ```
 
 
@@ -652,12 +651,12 @@ head(output_informative$summaries$objects)
 
 ```
 ##   Subject  Measurement Timepoint parameter      mean        sd     lower     upper      ESS   PSS
-## 1   GW_02        TL_px         1    length 12.632930 0.8064565 11.057880 14.159970 129.8752 50001
-## 2   GW_02 TL_w20.00_px         1    length  1.594146 0.1101182  1.384688  1.812920 160.8403 50001
-## 3   GW_02 TL_w25.00_px         1    length  1.851429 0.1259342  1.605168  2.094845 155.0373 50001
-## 4   GW_02 TL_w30.00_px         1    length  2.107764 0.1408167  1.831402  2.379725 149.2196 50001
-## 5   GW_02 TL_w35.00_px         1    length  2.269463 0.1507935  1.983251  2.568183 150.1656 50001
-## 6   GW_02 TL_w40.00_px         1    length  2.377608 0.1575131  2.070872  2.685245 141.9471 50001
+## 1   GW_02        TL_px         1    length 12.569546 0.8244970 11.063092 14.321355 119.8397 50001
+## 2   GW_02 TL_w20.00_px         1    length  1.586161 0.1125758  1.375075  1.819992 153.7412 50001
+## 3   GW_02 TL_w25.00_px         1    length  1.842278 0.1278571  1.599407  2.104314 143.7050 50001
+## 4   GW_02 TL_w30.00_px         1    length  2.097148 0.1438242  1.823357  2.390877 141.6581 50001
+## 5   GW_02 TL_w35.00_px         1    length  2.258450 0.1542346  1.964130  2.574711 134.9119 50001
+## 6   GW_02 TL_w40.00_px         1    length  2.365382 0.1607220  2.060765  2.693626 133.7664 50001
 ```
 
 We also can confirm that the measurements for total body lengths for rest of the whales also looks reasonable.
@@ -668,11 +667,11 @@ output_informative$summaries$objects %>% filter(Measurement == "TL_px")
 
 ```
 ##   Subject Measurement Timepoint parameter     mean        sd     lower    upper      ESS   PSS
-## 1   GW_02       TL_px         1    length 12.63293 0.8064565 11.057880 14.15997 129.8752 50001
-## 2   GW_05       TL_px         1    length 10.14971 0.5927402  8.988007 11.33359 242.6205 50001
-## 3   GW_07       TL_px         1    length 10.79891 0.8881069  9.067910 12.55685 229.0303 50001
-## 4   GW_08       TL_px         1    length 11.08569 0.8970785  9.432661 12.92683 242.8929 50001
-## 5   GW_09       TL_px         1    length 10.09300 0.8197268  8.560327 11.75943 274.8081 50001
+## 1   GW_02       TL_px         1    length 12.56955 0.8244970 11.063092 14.32136 119.8397 50001
+## 2   GW_05       TL_px         1    length 10.25102 0.6233892  9.027860 11.49365 210.5578 50001
+## 3   GW_07       TL_px         1    length 10.79829 0.9019547  9.009262 12.60823 214.1782 50001
+## 4   GW_08       TL_px         1    length 11.20260 0.9004282  9.445078 12.95615 242.1357 50001
+## 5   GW_09       TL_px         1    length 10.10095 0.8051738  8.471207 11.69085 296.3305 50001
 ```
 
 
@@ -687,7 +686,7 @@ output_informative$summaries$objects %>% filter(Measurement == "TL_px") %>%
   ylab("Total body length (m)") 
 ```
 
-![plot of chunk TL_output_informative](img/TL_output_informative-1.png)
+![plot of chunk Xc_Inf_Fig4_TL_output_informative](img/Xc_Inf_Fig4_TL_output_informative-1.png)
 
 
 &nbsp;
