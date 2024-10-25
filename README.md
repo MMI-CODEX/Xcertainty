@@ -9,7 +9,7 @@ install.packages("Xcertainty")
 library(Xcertainty)
 ```
 
-Take a look at some vignettes that review examples on how to use the different functions in the package. Start with the [Xcertainty](https://cran.r-project.org/web/packages/Xcertainty/vignettes/Xcertainty.html) vignette, as this will give a proper introduction to using `Xcertainty` and overview of how to use the `independent_length_sampler()` and `body_condition` functions. 
+We have a few vignettes with examples on how to use the different functions in the package to help you get started. Start with the [Xcertainty](https://cran.r-project.org/web/packages/Xcertainty/vignettes/Xcertainty.html) vignette, as this will give a proper introduction to using `Xcertainty` and an overview of how to use the `independent_length_sampler()` and `body_condition` functions. The [Xcertainty_informative_priors](https://cran.rstudio.com/web/packages/Xcertainty/vignettes/Xcertainty_informative_priors.html), vignette provides an example of when/how to use the `independent_length_sampler()` with informative priors, and the [Xcertainty_growth_curves](https://cran.rstudio.com/web/packages/Xcertainty/vignettes/Xcertainty_growth_curves.html) vignette  demonstrates how to use the `growth_curve_sampler()` to construct growth curves for data containing individuals with replicate body length measurements and age information over time.
 
 Xcertainty is currently in beta testing. If interested in providing feedback please use this form: https://forms.gle/LdEmfzhGaUVHcG6s6 
 
