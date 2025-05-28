@@ -115,8 +115,8 @@ calibration_data = parse_observations(
 This creates a list of four elements:   
     * `calibration_data$pixel_counts`.   
     * `calibration_data$training_objects`.    
-    * `calibration_data$image_info`.
-    * `calibration_data$prediction_objects`
+    * `calibration_data$image_info`.   
+    * `calibration_data$prediction_objects`   
  
 
 ### Gray whale measurements
@@ -177,10 +177,10 @@ whale_data = parse_observations(
 
   
 This creates a list of four elements:   
-    * `calibration_data$pixel_counts`.   
-    * `calibration_data$training_objects`.    
-    * `calibration_data$image_info`.
-    * `calibration_data$prediction_objects`
+    * `whale_data$pixel_counts`.   
+    * `whale_data$training_objects`.    
+    * `whale_data$image_info`.    
+    * `whale_data$prediction_objects`    
 
 
 ## Build sampler
